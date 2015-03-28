@@ -1,3 +1,19 @@
+/**
+ * No8  Copyright (C) 2015  no8.io
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package no8.io;
 
 import java.io.IOException;
@@ -5,18 +21,18 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.util.concurrent.CompletableFuture;
 
-import no8.async.ApplicationLoop;
+import no8.async.AsyncLoop;
 
 /**
  * A wrapper to {@link AsynchronousFileChannel} that executes all the operations inside the
- * {@link ApplicationLoop}, providing a {@link CompletableFuture} to encapsulate the result.
+ * {@link AsyncLoop}, providing a {@link CompletableFuture} to encapsulate the result.
  */
-public class AsynchronousFile extends AbstractAsynchronousIO<AsynchronousFileChannel> {
+public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
 
-  private ApplicationLoop loop;
+  private AsyncLoop loop;
   private AsynchronousFileChannel fileChannel;
 
-  protected AsynchronousFile(AsynchronousFileChannel fileChannel, ApplicationLoop loop) {
+  public AsynchronousFile(AsynchronousFileChannel fileChannel, AsyncLoop loop) {
     super(fileChannel, loop);
   }
 

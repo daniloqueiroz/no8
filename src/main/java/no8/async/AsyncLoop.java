@@ -14,29 +14,45 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package no8.io;
+package no8.async;
 
-import java.net.SocketAddress;
-import java.nio.channels.AsynchronousSocketChannel;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-import no8.async.AsyncLoop;
-import no8.async.TransformedFuture;
+public class AsyncLoop {
 
-public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel> {
+  public static Optional<AsyncLoop> loop = Optional.<AsyncLoop> empty();
 
-  public AsynchronousSocket(AsynchronousSocketChannel socketChannel, AsyncLoop loop) {
-    super(socketChannel, loop);
+  /**
+   * Gets the current loop.
+   * 
+   * @throws IllegalStateException if loop wasn't build yet.
+   */
+  public static AsyncLoop loop() {
+    return loop.orElseThrow(() -> {
+      return new IllegalStateException();
+    });
   }
 
-  public CompletableFuture<AsynchronousSocket> connect(SocketAddress address) {
-    Future<Void> connection = this.channel.connect(address);
-    TransformedFuture<Void, AsynchronousSocket> transformedFuture = TransformedFuture.<Void, AsynchronousSocket> from(
-        connection).to((Void) -> {
-      return this;
-    });
+  private AsyncLoop() {
 
-    return this.loop.toCompletable(transformedFuture);
+  }
+
+
+  public void join() {
+
+  }
+
+  public void shutdown() {
+
+  }
+
+  public <T> CompletableFuture<T> toCompletable(Future<T> future) {
+    return null;
+  }
+
+  public <T> CompletableFuture<T> blocking() {
+    return null;
   }
 }
