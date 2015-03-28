@@ -16,6 +16,9 @@ mainClassName = 'no8.cli.Main'
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
+repositories {
+    mavenCentral()
+}
 
 dependencies {
     compile (
@@ -42,8 +45,5 @@ watch {
 }
 
 license {
-  header = file('HEADER.txt')
-  ext.year = Calendar.getInstance().get(Calendar.YEAR)
-  ext.project = 'NO8'
-  ext.url = 'no8.io'
+  header = file('LICENSE_HEADER')
 }
