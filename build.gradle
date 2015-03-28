@@ -1,0 +1,49 @@
+plugins {
+  id 'com.bluepapa32.watch' version '0.1.5'
+  id 'com.github.ben-manes.versions' version '0.8'
+  id 'com.github.hierynomus.license' version '0.11.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'build-dashboard'
+apply plugin:'application'
+
+description = 'No8'
+version = '0.1.0'
+mainClassName = 'no8.cli.Main'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+
+dependencies {
+    compile (
+      // Logging Facade
+      'org.slf4j:slf4j-api:1.7.12',
+    )
+
+    testCompile (
+        'junit:junit:4.12',
+        'org.mockito:mockito-all:2.0.2-beta',
+        'org.assertj:assertj-core:2.0.0',
+    )
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}
+
+watch {
+    java {
+        files files('src/')
+        tasks 'test'
+    }
+}
+
+license {
+  header = file('HEADER.txt')
+  ext.year = Calendar.getInstance().get(Calendar.YEAR)
+  ext.project = 'NO8'
+  ext.url = 'no8.io'
+}
