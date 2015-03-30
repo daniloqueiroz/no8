@@ -16,12 +16,19 @@
  */
 package no8;
 
+import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 import no8.async.AsyncLoop;
 import no8.examples.echo.ClientApp;
 import no8.examples.echo.ServerApp;
+import no8.io.AsynchronousFile;
+import no8.io.AsynchronousSocket;
 
 /**
  * Base class for No8 applications.
@@ -90,6 +97,24 @@ public abstract class Application {
   @Override
   public String toString() {
     return this.name();
+  }
+
+  /**
+   * Creates an {@link AsynchronousFile}.
+   * 
+   * @see AsynchronousFileChannel#open(Path, OpenOption...)
+   */
+  public AsynchronousFile openFile(Path file, OpenOption options) throws IOException {
+    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), this.loop());
+  }
+
+  /**
+   * Creates an {@link AsynchronousSocket}
+   * 
+   * @see AsynchronousSocketChannel#open()
+   */
+  public AsynchronousSocket openSocket() throws IOException {
+    return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.loop());
   }
 
   /**
