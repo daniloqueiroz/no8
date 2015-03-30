@@ -39,4 +39,8 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
 
     return this.loop.runWhenDone(transformedFuture);
   }
+
+  public CompletableFuture<AsynchronousSocket> write(String msg) {
+    return null;
+  }
 }
