@@ -22,6 +22,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import no8.async.AsyncLoop;
@@ -126,6 +127,8 @@ public abstract class Application {
 
   /**
    * Setup this application.
+   * 
+   * @param parameters
    */
-  public abstract void configure(List<String> parameters);
+  public abstract void configure(Map<String, String> parameters);
 }

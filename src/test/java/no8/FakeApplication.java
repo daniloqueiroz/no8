@@ -16,12 +16,12 @@
  */
 package no8;
 
-import java.util.List;
+import java.util.Map;
 
 public class FakeApplication extends Application {
 
   @Override
-  public void configure(List<String> parameters) {
+  public void configure(Map<String, String> parameters) {
   }
 
   @Override

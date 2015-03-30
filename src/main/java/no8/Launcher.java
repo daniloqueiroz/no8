@@ -16,8 +16,9 @@
  */
 package no8;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import no8.async.AsyncLoop;
 
@@ -40,14 +41,14 @@ public class Launcher {
 
   private static final Logger LOG = LoggerFactory.getLogger(Launcher.class);
   protected Application application;
-  private List<String> extraParams;
+  private Map<String, String> extraParams;
 
   @SuppressWarnings("unchecked")
-  public Launcher(String applicationClassName, List<String> extraParams) throws ClassNotFoundException {
+  public Launcher(String applicationClassName, Map<String, String> extraParams) throws ClassNotFoundException {
     this((Class<? extends Application>) ClassLoader.getSystemClassLoader().loadClass(applicationClassName), extraParams);
   }
 
-  public Launcher(Class<? extends Application> applicationClass, List<String> extraParams) {
+  public Launcher(Class<? extends Application> applicationClass, Map<String, String> extraParams) {
     try {
       this.application = applicationClass.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
@@ -85,7 +86,7 @@ public class Launcher {
       ;
       ;
     default:
-      List<String> extraParams = Arrays.asList(args).subList(1, args.length);
+      Map<String, String> extraParams = new HashMap<>();
       try {
         new Launcher(param, extraParams).launch();
       } catch (ClassNotFoundException | IllegalArgumentException e) {

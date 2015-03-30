@@ -16,14 +16,14 @@
  */
 package no8.examples.echo;
 
-import java.util.List;
+import java.util.Map;
 
 import no8.Application;
 
 public class ServerApp extends Application {
 
   @Override
-  public void configure(List<String> parameters) {
+  public void configure(Map<String, String> parameters) {
 
   }
 

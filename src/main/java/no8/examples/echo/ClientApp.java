@@ -19,7 +19,7 @@ package no8.examples.echo;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.List;
+import java.util.Map;
 
 import no8.Application;
 import no8.io.AsynchronousSocket;
@@ -32,7 +32,7 @@ public class ClientApp extends Application {
   }
 
   @Override
-  public void configure(List<String> parameters) {
+  public void configure(Map<String, String> parameters) {
     String host = (parameters.size() >= 1) ? parameters.get(0) : "localhost";
     String port = (parameters.size() >= 2) ? parameters.get(1) : "9999";
     String msg = (parameters.size() >= 3) ? parameters.get(2) : "message";

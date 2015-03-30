@@ -23,9 +23,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import no8.async.AsyncLoop;
 
@@ -35,25 +35,26 @@ public class LauncherTest {
 
   @Test
   public void createsLauncherWithClassName() throws ClassNotFoundException {
-    Launcher l = new Launcher("no8.FakeApplication", Collections.emptyList());
+    Launcher l = new Launcher("no8.FakeApplication", Collections.emptyMap());
     assertThat(l.application, notNullValue());
   }
 
   @Test
   public void createsLauncherWithClass() throws ClassNotFoundException {
-    Launcher l = new Launcher(FakeApplication.class, Collections.emptyList());
+    Launcher l = new Launcher(FakeApplication.class, Collections.emptyMap());
     assertThat(l.application, notNullValue());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void createsLauncherWithInvalidClass() throws ClassNotFoundException {
-    new Launcher(Application.class, Collections.emptyList());
+    new Launcher(Application.class, Collections.emptyMap());
   }
 
   @Test
   public void launcherSetupsApplication() throws ClassNotFoundException {
     Application mockApp = mock(Application.class);
-    List<String> extraParams = Arrays.asList("param1", "param2");
+    Map<String, String> extraParams = new HashMap<>();
+    extraParams.put("key", "value");
     Launcher l = new Launcher(FakeApplication.class, extraParams);
     l.application = mockApp;
     when(mockApp.name()).thenReturn("MockApp");
