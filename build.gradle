@@ -11,7 +11,8 @@ apply plugin:'application'
 
 description = 'No8'
 version = '0.1.0'
-mainClassName = 'no8.cli.Main'
+mainClassName = 'no8.Launcher'
+applicationDefaultJvmArgs = ["-ea", "-showversion", "-server"]
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -22,14 +23,16 @@ repositories {
 
 dependencies {
     compile (
-      // Logging Facade
-      'org.slf4j:slf4j-api:1.7.12',
+        'org.slf4j:slf4j-api:1.7.12',
     )
 
     testCompile (
         'junit:junit:4.12',
         'org.mockito:mockito-all:2.0.2-beta',
-        'org.assertj:assertj-core:2.0.0',
+)
+
+    runtime (
+        'ch.qos.logback:logback-classic:1.1.3'
     )
 }
 
