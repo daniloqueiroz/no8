@@ -37,11 +37,11 @@ public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
   }
 
   public CompletableFuture<Integer> write(ByteBuffer buffer, Integer position) {
-    return this.loop.toCompletable(this.fileChannel.write(buffer, position));
+    return this.loop.runWhenDone(this.fileChannel.write(buffer, position));
   }
 
   public CompletableFuture<Integer> read(ByteBuffer buffer, Integer position) {
-    return this.loop.toCompletable(this.fileChannel.read(buffer, position));
+    return this.loop.runWhenDone(this.fileChannel.read(buffer, position));
   }
 
   public long size() throws IOException {

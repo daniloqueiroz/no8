@@ -37,6 +37,6 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
       return this;
     });
 
-    return this.loop.toCompletable(transformedFuture);
+    return this.loop.runWhenDone(transformedFuture);
   }
 }

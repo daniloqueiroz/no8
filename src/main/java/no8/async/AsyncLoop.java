@@ -16,43 +16,126 @@
  */
 package no8.async;
 
-import java.util.Optional;
+import static java.lang.String.format;
+
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinPool.ManagedBlocker;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsyncLoop {
 
-  public static Optional<AsyncLoop> loop = Optional.<AsyncLoop> empty();
+  private static final Logger LOG = LoggerFactory.getLogger(AsyncLoop.class);
+
+  protected ForkJoinPool pool;
+  private UncaughtExceptionHandler errorHandler = (tt, ee) -> {
+    LOG.error(format("Uncaught Exception from thread %s", tt), ee);
+  };
+
+  private boolean started = false;
+
+  protected BlockingQueue<FutureContainer<?>> futuresQueue = new LinkedBlockingQueue<>();
+
+  public AsyncLoop() {
+    UncaughtExceptionHandler wrapper = ((t, e) -> {
+      this.errorHandler.uncaughtException(t, e);
+    });
+
+    this.pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
+        ForkJoinPool.defaultForkJoinWorkerThreadFactory, wrapper, true);
+  }
 
   /**
-   * Gets the current loop.
+   * Set the handler for uncaught exceptions.
    * 
-   * @throws IllegalStateException if loop wasn't build yet.
+   * @throws AssertionError if errorHandler is null.
    */
-  public static AsyncLoop loop() {
-    return loop.orElseThrow(() -> {
-      return new IllegalStateException();
+  public void exceptionHandler(UncaughtExceptionHandler errorHandler) {
+    assert errorHandler != null;
+    this.errorHandler = errorHandler;
+  }
+
+  public boolean isStarted() {
+    return this.started;
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  public void start() {
+    this.started = true;
+
+    this.pool.execute(() -> {
+      while (started) {
+        try {
+          FutureContainer container = this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
+          if (container.future.isDone()) {
+            container.completable.complete(container.future.get());
+          } else {
+            this.futuresQueue.put(container);
+          }
+        } catch (Exception e) {
+          LOG.error("Unexpected exception on future loop");
+        }
+
+      }
     });
   }
 
-  private AsyncLoop() {
+  public <T> CompletableFuture<T> runWhenDone(Future<T> future) {
+    CompletableFuture<T> completable = new CompletableFuture<>();
+    try {
+      this.futuresQueue.put(new FutureContainer<>(future, completable));
+    } catch (InterruptedException e) {
+      LOG.error("Unexpected error adding future to AsyncLoop", e);
+      throw new RuntimeException(e);
+    }
 
+    return completable;
   }
 
+  public <T> CompletableFuture<T> blocking(Supplier<T> synchronousFunction) {
+    final CompletableFuture<T> future = new CompletableFuture<>();
+    try {
+      ForkJoinPool.managedBlock(new ManagedBlocker() {
+        AtomicBoolean lock = new AtomicBoolean(false);
 
-  public void join() {
+        @Override
+        public boolean isReleasable() {
+          return lock.get();
+        }
 
+        @Override
+        public boolean block() throws InterruptedException {
+          if (!this.lock.get()) {
+            future.complete(synchronousFunction.get());
+            this.lock.set(true);
+          }
+          return this.lock.get();
+        }
+      });
+    } catch (InterruptedException e) {
+      LOG.error("Error while executing blocking task", e);
+      throw new RuntimeException(e);
+    }
+
+    return future;
   }
 
-  public void shutdown() {
+  private class FutureContainer<T> {
+    Future<T> future;
+    CompletableFuture<T> completable;
 
-  }
-
-  public <T> CompletableFuture<T> toCompletable(Future<T> future) {
-    return null;
-  }
-
-  public <T> CompletableFuture<T> blocking() {
-    return null;
+    public FutureContainer(Future<T> future, CompletableFuture<T> completable) {
+      this.future = future;
+      this.completable = completable;
+    }
   }
 }

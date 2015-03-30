@@ -16,8 +16,6 @@
  */
 package no8.io;
 
-import static no8.async.AsyncLoop.loop;
-
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -35,7 +33,7 @@ public class AsynchronousIOs {
    * @see AsynchronousFileChannel#open(Path, OpenOption...)
    */
   public static AsynchronousFile openFile(Path file, OpenOption options) throws IOException {
-    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), loop());
+    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), null);
   }
 
   /**
@@ -44,7 +42,7 @@ public class AsynchronousIOs {
    * @see AsynchronousSocketChannel#open()
    */
   public static AsynchronousSocket openSocket() throws IOException {
-    return new AsynchronousSocket(AsynchronousSocketChannel.open(), loop());
+    return new AsynchronousSocket(AsynchronousSocketChannel.open(), null);
   }
 
 }
