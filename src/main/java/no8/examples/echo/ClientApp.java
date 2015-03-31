@@ -33,9 +33,9 @@ public class ClientApp extends Application {
 
   @Override
   public void configure(Map<String, String> parameters) {
-    String host = (parameters.size() >= 1) ? parameters.get(0) : "localhost";
-    String port = (parameters.size() >= 2) ? parameters.get(1) : "9999";
-    String msg = (parameters.size() >= 3) ? parameters.get(2) : "message";
+    String host = parameters.getOrDefault("host", "localhost");
+    String port = parameters.getOrDefault("port", "9999");
+    String msg = parameters.getOrDefault("message", "echo");
 
     AsynchronousSocket socket;
     try {

@@ -1,4 +1,4 @@
-* parameter parsing --option value -> map
+* application --help support
 * echo client/server example
 * metrics integration
 * MDC logging support

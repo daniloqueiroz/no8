@@ -1,24 +1,25 @@
 /**
- * No8  Copyright (C) 2015  no8.io
+ * No8 Copyright (C) 2015 no8.io
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
  */
 package no8;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import no8.async.AsyncLoop;
 
@@ -45,7 +46,8 @@ public class Launcher {
 
   @SuppressWarnings("unchecked")
   public Launcher(String applicationClassName, Map<String, String> extraParams) throws ClassNotFoundException {
-    this((Class<? extends Application>) ClassLoader.getSystemClassLoader().loadClass(applicationClassName), extraParams);
+    this((Class<? extends Application>) ClassLoader.getSystemClassLoader().loadClass(applicationClassName),
+        extraParams);
   }
 
   public Launcher(Class<? extends Application> applicationClass, Map<String, String> extraParams) {
@@ -79,26 +81,42 @@ public class Launcher {
     String param = args[0];
 
     switch (param) {
-    case "--help":
-    case "-h":
-      showHelp();
-      System.exit(0);
-      ;
-      ;
-    default:
-      Map<String, String> extraParams = new HashMap<>();
-      try {
-        new Launcher(param, extraParams).launch();
-      } catch (ClassNotFoundException | IllegalArgumentException e) {
-        LOG.error("Error launching application", e);
-        System.err.printf("Unable to launch application '%s'.\n", param);
-      }
+      case "--help":
+      case "-h":
+        showHelp();
+        System.exit(0);
+        ;
+        ;
+      default:
+        Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
+        try {
+          new Launcher(param, extraParams).launch();
+        } catch (ClassNotFoundException | IllegalArgumentException e) {
+          LOG.error("Error launching application", e);
+          System.err.printf("Unable to launch application '%s'.\n", param);
+        }
     }
   }
 
   private static void showHelp() {
-    String message = "Usage:\n\tjava no8.Launcher <Application Class>\n\t"
-        + "ie.: java no8.Launcher no8.example.echo.ServerApp\n";
+    String message =
+        "Usage:\n\tjava no8.Launcher <Application Class>\n\t"
+            + "ie.: java no8.Launcher no8.example.echo.ServerApp\n";
     System.out.print(message);
   }
+
+  protected static Map<String, String> argsToMap(List<String> args) {
+    // TODO find a more "java8" way of doing this!
+    Map<String, String> config = new HashMap<>();
+    Queue<String> key = new LinkedList<>();
+    args.stream().forEach((arg) -> {
+      if (arg.startsWith("--")) {
+        key.offer(arg.substring(2));
+      } else {
+        config.put(key.poll(), arg);
+      }
+    });
+    return config;
+  }
+
 }
