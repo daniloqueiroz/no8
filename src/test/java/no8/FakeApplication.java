@@ -16,17 +16,41 @@
  */
 package no8;
 
+import static java.lang.Integer.parseInt;
+
 import java.util.Map;
 
 public class FakeApplication extends Application {
 
+  private Integer sleepMs;
+  public boolean run = true;
+  private int loops = 0;
+
+  public int loops() {
+    return loops;
+  }
+
   @Override
   public void configure(Map<String, String> parameters) {
+    this.sleepMs = parseInt(parameters.getOrDefault("sleepMs", "100"));
   }
 
   @Override
   public String name() {
     return "Fake Application";
+  }
+
+  @Override
+  public void run() {
+    try {
+      while (run) {
+        this.loops++;
+        System.out.printf("Fake app will sleep %s for secs -> loops: %s\n", sleepMs, loops);
+        Thread.sleep(this.sleepMs);
+      }
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

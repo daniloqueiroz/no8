@@ -26,6 +26,10 @@ import no8.io.AsynchronousSocket;
 
 public class ClientApp extends Application {
 
+  private String host;
+  private String port;
+  private String msg;
+
   @Override
   public String name() {
     return "Echo Client";
@@ -33,21 +37,36 @@ public class ClientApp extends Application {
 
   @Override
   public void configure(Map<String, String> parameters) {
-    String host = parameters.getOrDefault("host", "localhost");
-    String port = parameters.getOrDefault("port", "9999");
-    String msg = parameters.getOrDefault("message", "echo");
+    this.host = parameters.getOrDefault("host", "localhost");
+    this.port = parameters.getOrDefault("port", "9999");
+    this.msg = parameters.getOrDefault("message", "echo");
+  }
 
+  @Override
+  public void run() {
+    SocketAddress address = new InetSocketAddress(host, Integer.valueOf(port));
     AsynchronousSocket socket;
     try {
-       socket = this.openSocket();
+      socket = this.openSocket();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    
-    SocketAddress address = new InetSocketAddress(host, Integer.valueOf(port));
+
     socket.connect(address).thenAccept((s) -> {
-      s.write(msg);
+      this.connected(s);
     });
   }
 
+  private void connected(AsynchronousSocket socket) {
+    socket.write(msg).thenAccept((s) -> {
+      this.waitEcho(s);
+    });
+  }
+
+  private void waitEcho(AsynchronousSocket socket) {
+    socket.read().thenAccept((msg) -> {
+      System.out.printf("Server reply> %s\n", msg);
+      this.shutdown();
+    });
+  }
 }

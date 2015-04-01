@@ -56,4 +56,15 @@ public class AsyncLoopTest {
     });
     assertThat(completable, notNullValue());
   }
+
+  @Test(expected=IllegalStateException.class)
+  public void startingStartLoop() {
+    this.loop.start();
+    this.loop.start();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void shutdownNotRunninLoop() {
+    this.loop.shutdown();
+  }
 }

@@ -68,6 +68,15 @@ public class ApplicationTest {
     verify(this.mockLoop).start();
   }
 
+  @Test
+  public void shutdownStopsLoop() {
+    this.application.loop(this.mockLoop);
+
+    this.application.shutdown();
+
+    verify(this.mockLoop).shutdown();
+  }
+
   @Test(expected = IllegalStateException.class)
   public void waitForNotStartedLoopFails() {
     this.application.loop(this.mockLoop);

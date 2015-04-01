@@ -43,4 +43,8 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
   public CompletableFuture<AsynchronousSocket> write(String msg) {
     return null;
   }
+
+  public CompletableFuture<String> read() {
+    return null;
+  }
 }

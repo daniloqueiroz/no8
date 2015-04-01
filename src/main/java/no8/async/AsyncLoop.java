@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import no8.Application;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,29 +66,44 @@ public class AsyncLoop {
     this.errorHandler = errorHandler;
   }
 
+  public void shutdown() {
+    if (this.started) {
+      this.started = false;
+      this.pool.shutdown();
+    } else {
+      throw new IllegalStateException("Loop not started");
+    }
+  }
+
   public boolean isStarted() {
     return this.started;
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void start() {
-    this.started = true;
+    if (!this.started) {
+      this.started = true;
 
-    this.pool.execute(() -> {
-      while (started) {
-        try {
-          FutureContainer container = this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
-          if (container.future.isDone()) {
-            container.completable.complete(container.future.get());
-          } else {
-            this.futuresQueue.put(container);
+      this.pool.execute(() -> {
+        while (started) {
+          try {
+            // TODO use optional / monad
+            FutureContainer container = this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
+            if (container != null) {
+              if (container.future.isDone()) {
+                container.completable.complete(container.future.get());
+              } else {
+                this.futuresQueue.put(container);
+              }
+            }
+          } catch (Exception e) {
+            LOG.error("Unexpected exception on future loop", e);
           }
-        } catch (Exception e) {
-          LOG.error("Unexpected exception on future loop");
         }
-
-      }
-    });
+      });
+    } else {
+      throw new IllegalStateException("Loop already started");
+    }
   }
 
   public <T> CompletableFuture<T> runWhenDone(Future<T> future) {
@@ -137,5 +154,9 @@ public class AsyncLoop {
       this.future = future;
       this.completable = completable;
     }
+  }
+
+  public void submit(Application application) {
+    this.pool.submit(application);
   }
 }

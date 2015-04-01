@@ -32,4 +32,10 @@ public class ServerApp extends Application {
     return "Echo Server";
   }
 
+  @Override
+  public void run() {
+    // TODO Auto-generated method stub
+
+  }
+
 }

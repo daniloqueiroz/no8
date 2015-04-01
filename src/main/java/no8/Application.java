@@ -42,7 +42,7 @@ import no8.io.AsynchronousSocket;
  * @see ServerApp
  * @see ClientApp
  */
-public abstract class Application {
+public abstract class Application implements Runnable {
 
   protected Optional<AsyncLoop> loop = Optional.empty();
 
@@ -76,6 +76,11 @@ public abstract class Application {
    */
   public void start() {
     this.loop().start();
+    this.loop().submit(this);
+  }
+
+  public void shutdown() {
+    this.loop().shutdown();
   }
 
   /**
