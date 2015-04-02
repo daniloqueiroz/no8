@@ -16,11 +16,6 @@
  */
 package no8;
 
-import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,8 +23,7 @@ import java.util.Optional;
 import no8.async.AsyncLoop;
 import no8.examples.echo.ClientApp;
 import no8.examples.echo.ServerApp;
-import no8.io.AsynchronousFile;
-import no8.io.AsynchronousSocket;
+import no8.io.AsynchronousIOFactory;
 
 /**
  * Base class for No8 applications.
@@ -44,51 +38,61 @@ import no8.io.AsynchronousSocket;
  */
 public abstract class Application implements Runnable {
 
-  protected Optional<AsyncLoop> loop = Optional.empty();
+  private static Optional<Application> application = Optional.empty();
 
-  /**
-   * Gets the {@link AsyncLoop} for this application.
-   */
-  public AsyncLoop loop() {
-    return this.loop.orElseThrow(() -> {
-      return new IllegalStateException("Loop not set yet.");
+  public static final Application currentApplication() {
+    return application.orElseThrow(() -> {
+      return new IllegalStateException();
     });
   }
 
-  /**
-   * Sets the application {@link AsyncLoop}.
-   * 
-   * This method is called by the {@link Launcher}.
-   * 
-   * @throws IllegalStateException if trying to set the loop when the current {@link AsyncLoop} is
-   * already started.
-   */
-  public void loop(AsyncLoop asyncLoop) {
-    if (!this.loop.isPresent() || !this.loop().isStarted()) {
-      this.loop = Optional.of(asyncLoop);
+  private static final void currentApplication(Application app) {
+    if (!application.isPresent()) {
+      application = Optional.of(app);
     } else {
-      throw new IllegalStateException("Loop already set.");
+      throw new IllegalStateException("There's an Application running already.");
     }
+  }
+
+  protected static final void resetCurrentApplication() {
+    application = Optional.empty();
+  }
+
+  public final AsyncLoop loop;
+  public final AsynchronousIOFactory io;
+
+  public Application() {
+    this(new AsyncLoop());
+  }
+
+  public Application(AsyncLoop asyncLoop) {
+    this(asyncLoop, new AsynchronousIOFactory(asyncLoop));
+  }
+
+  public Application(AsyncLoop asyncLoop, AsynchronousIOFactory asynchronousIOFactory) {
+    this.loop = asyncLoop;
+    this.io = asynchronousIOFactory;
+    currentApplication(this);
   }
 
   /**
    * Starts the application {@link AsyncLoop}
    */
   public void start() {
-    this.loop().start();
-    this.loop().submit(this);
+    this.loop.start();
+    this.loop.submit(this);
   }
 
   public void shutdown() {
-    this.loop().shutdown();
+    this.loop.shutdown();
   }
 
   /**
    * Waits the application ends.
    */
   public void waitFor() {
-    if (this.loop().isStarted()) {
-      while (this.loop().isStarted()) {
+    if (this.loop.isStarted()) {
+      while (this.loop.isStarted()) {
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -103,26 +107,6 @@ public abstract class Application implements Runnable {
   @Override
   public String toString() {
     return this.name();
-  }
-
-  /**
-   * Creates an {@link AsynchronousFile}.
-   * 
-   * @see AsynchronousFileChannel#open(Path, OpenOption...)
-   */
-  public AsynchronousFile openFile(Path file, OpenOption options) throws IOException {
-    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), this.loop());
-  }
-
-  /**
-   * Creates an {@link AsynchronousSocket}
-   * 
-   * @param address
-   * 
-   * @see AsynchronousSocketChannel#open()
-   */
-  public AsynchronousSocket openSocket() throws IOException {
-    return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.loop());
   }
 
   /**

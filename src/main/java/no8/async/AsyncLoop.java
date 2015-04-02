@@ -23,13 +23,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-
-import no8.Application;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +105,10 @@ public class AsyncLoop {
     }
   }
 
+  public ForkJoinTask<?> submit(Runnable runnable) {
+    return this.pool.submit(runnable);
+  }
+
   public <T> CompletableFuture<T> runWhenDone(Future<T> future) {
     CompletableFuture<T> completable = new CompletableFuture<>();
     try {
@@ -154,9 +157,5 @@ public class AsyncLoop {
       this.future = future;
       this.completable = completable;
     }
-  }
-
-  public void submit(Application application) {
-    this.pool.submit(application);
   }
 }

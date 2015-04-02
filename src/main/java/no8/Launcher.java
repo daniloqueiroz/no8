@@ -45,17 +45,18 @@ public class Launcher {
   private Map<String, String> extraParams;
 
   @SuppressWarnings("unchecked")
-  public Launcher(String applicationClassName, Map<String, String> extraParams) throws ClassNotFoundException {
-    this((Class<? extends Application>) ClassLoader.getSystemClassLoader().loadClass(applicationClassName),
-        extraParams);
+  public Launcher(String applicationClassName, Map<String, String> extraParams) throws ClassNotFoundException,
+      InstantiationException, IllegalAccessException {
+    this((Class<? extends Application>) ClassLoader.getSystemClassLoader().loadClass(applicationClassName), extraParams);
   }
 
-  public Launcher(Class<? extends Application> applicationClass, Map<String, String> extraParams) {
-    try {
-      this.application = applicationClass.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new IllegalArgumentException(e);
-    }
+  public Launcher(Class<? extends Application> applicationClass, Map<String, String> extraParams)
+      throws InstantiationException, IllegalAccessException {
+    this(applicationClass.newInstance(), extraParams);
+  }
+
+  public Launcher(Application application, Map<String, String> extraParams) {
+    this.application = application;
     this.extraParams = extraParams;
   }
 
@@ -64,7 +65,7 @@ public class Launcher {
    */
   public void launch() {
     LOG.info("Lauching application {}", application.name());
-    this.application.loop(new AsyncLoop());
+    // TODO create application class
     LOG.debug("Application lifecycle configure being executed now.");
     this.application.configure(this.extraParams);
     this.application.start();
@@ -81,27 +82,26 @@ public class Launcher {
     String param = args[0];
 
     switch (param) {
-      case "--help":
-      case "-h":
-        showHelp();
-        System.exit(0);
-        ;
-        ;
-      default:
-        Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
-        try {
-          new Launcher(param, extraParams).launch();
-        } catch (ClassNotFoundException | IllegalArgumentException e) {
-          LOG.error("Error launching application", e);
-          System.err.printf("Unable to launch application '%s'.\n", param);
-        }
+    case "--help":
+    case "-h":
+      showHelp();
+      System.exit(0);
+      ;
+      ;
+    default:
+      Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
+      try {
+        new Launcher(param, extraParams).launch();
+      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        LOG.error("Error launching application", e);
+        System.err.printf("Unable to launch application '%s'.\n", param);
+      }
     }
   }
 
   private static void showHelp() {
-    String message =
-        "Usage:\n\tjava no8.Launcher <Application Class>\n\t"
-            + "ie.: java no8.Launcher no8.example.echo.ServerApp\n";
+    String message = "Usage:\n\tjava no8.Launcher <Application Class>\n\t"
+        + "ie.: java no8.Launcher no8.example.echo.ServerApp\n";
     System.out.print(message);
   }
 

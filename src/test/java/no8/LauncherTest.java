@@ -17,7 +17,6 @@ package no8;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,41 +27,46 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import no8.async.AsyncLoop;
-
+import org.junit.Before;
 import org.junit.Test;
 
 public class LauncherTest {
 
+  @Before
+  public void before() {
+    Application.resetCurrentApplication();
+  }
+
   @Test
-  public void createsLauncherWithClassName() throws ClassNotFoundException {
+  public void createsLauncherWithClassName() throws ClassNotFoundException, InstantiationException,
+      IllegalAccessException {
     Launcher l = new Launcher("no8.FakeApplication", Collections.emptyMap());
     assertThat(l.application, notNullValue());
   }
 
   @Test
-  public void createsLauncherWithClass() throws ClassNotFoundException {
+  public void createsLauncherWithClass() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
     Launcher l = new Launcher(FakeApplication.class, Collections.emptyMap());
     assertThat(l.application, notNullValue());
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void createsLauncherWithInvalidClass() throws ClassNotFoundException {
+  @Test(expected = InstantiationException.class)
+  public void createsLauncherWithInvalidClass() throws ClassNotFoundException, InstantiationException,
+      IllegalAccessException {
     new Launcher(Application.class, Collections.emptyMap());
   }
 
   @Test
-  public void launcherSetupsApplication() throws ClassNotFoundException {
+  public void launcherSetupsApplication() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
     Application mockApp = mock(Application.class);
     Map<String, String> extraParams = new HashMap<>();
     extraParams.put("key", "value");
-    Launcher l = new Launcher(FakeApplication.class, extraParams);
+    Launcher l = new Launcher(mockApp, extraParams);
     l.application = mockApp;
     when(mockApp.name()).thenReturn("MockApp");
 
     l.launch();
 
-    verify(mockApp).loop(notNull(AsyncLoop.class));
     verify(mockApp).configure(extraParams);
     verify(mockApp).start();
     verify(mockApp).waitFor();

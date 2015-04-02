@@ -23,12 +23,18 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
 
+import org.junit.Before;
 import org.junit.Test;
 
 public class ApplicationLoopTest {
 
+  @Before
+  public void before() {
+    Application.resetCurrentApplication();
+  }
+
   @Test
-  public void fakeApplicationRuns() throws InterruptedException {
+  public void fakeApplicationRuns() throws InterruptedException, InstantiationException, IllegalAccessException {
     Launcher launch = new Launcher(FakeApplication.class, Collections.emptyMap());
 
     assertThat(((FakeApplication) launch.application).loops(), is(0));
@@ -40,7 +46,7 @@ public class ApplicationLoopTest {
       } catch (Exception e) {
         e.printStackTrace();
       }
-      assertTrue(launch.application.loop().isStarted());
+      assertTrue(launch.application.loop.isStarted());
       launch.application.shutdown();
     }).start();
 

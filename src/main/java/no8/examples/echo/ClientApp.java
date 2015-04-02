@@ -47,7 +47,7 @@ public class ClientApp extends Application {
     SocketAddress address = new InetSocketAddress(host, Integer.valueOf(port));
     AsynchronousSocket socket;
     try {
-      socket = this.openSocket();
+      socket = this.io.openSocket();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

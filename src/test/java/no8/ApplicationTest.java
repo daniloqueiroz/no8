@@ -16,8 +16,6 @@
  */
 package no8;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,35 +32,13 @@ public class ApplicationTest {
 
   @Before
   public void setUp() {
-    this.application = new FakeApplication();
+    Application.resetCurrentApplication();
     this.mockLoop = mock(AsyncLoop.class);
-  }
-
-  @Test(expected = IllegalStateException.class)
-  public void getLoopNoLoop() {
-    application.loop();
-  }
-
-  @Test
-  public void setLoopOK() {
-    AsyncLoop loop = new AsyncLoop();
-    this.application.loop(new AsyncLoop());
-    this.application.loop(loop);
-    assertThat(application.loop(), is(loop));
-  }
-
-  @Test(expected = IllegalStateException.class)
-  public void setLoopAlreadyStarted() {
-    AsyncLoop loop = new AsyncLoop();
-    this.application.loop(loop);
-    this.application.start();
-    this.application.loop(loop);
+    this.application = new FakeApplication(this.mockLoop);
   }
 
   @Test
   public void startStartsLoop() {
-    this.application.loop(this.mockLoop);
-
     this.application.start();
 
     verify(this.mockLoop).start();
@@ -70,8 +46,6 @@ public class ApplicationTest {
 
   @Test
   public void shutdownStopsLoop() {
-    this.application.loop(this.mockLoop);
-
     this.application.shutdown();
 
     verify(this.mockLoop).shutdown();
@@ -79,7 +53,6 @@ public class ApplicationTest {
 
   @Test(expected = IllegalStateException.class)
   public void waitForNotStartedLoopFails() {
-    this.application.loop(this.mockLoop);
     this.application.waitFor();
   }
 
@@ -91,7 +64,6 @@ public class ApplicationTest {
   @Test
   public void waitFor2Interactions() {
     when(this.mockLoop.isStarted()).thenReturn(true, true, false);
-    this.application.loop(this.mockLoop);
     this.application.waitFor();
     verify(this.mockLoop, times(3)).isStarted();
   }

@@ -20,11 +20,21 @@ import static java.lang.Integer.parseInt;
 
 import java.util.Map;
 
+import no8.async.AsyncLoop;
+
 public class FakeApplication extends Application {
 
   private Integer sleepMs;
   public boolean run = true;
   private int loops = 0;
+
+  public FakeApplication() {
+    super();
+  }
+
+  public FakeApplication(AsyncLoop mockLoop) {
+    super(mockLoop);
+  }
 
   public int loops() {
     return loops;
