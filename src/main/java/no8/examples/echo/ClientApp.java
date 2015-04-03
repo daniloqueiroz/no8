@@ -18,17 +18,20 @@ package no8.examples.echo;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.Map;
 
 import no8.Application;
 import no8.io.AsynchronousSocket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ClientApp extends Application {
 
-  private String host;
-  private String port;
+  private static final Logger LOG = LoggerFactory.getLogger(ClientApp.class);
+
   private String msg;
+  private InetSocketAddress address;
 
   @Override
   public String name() {
@@ -37,14 +40,15 @@ public class ClientApp extends Application {
 
   @Override
   public void configure(Map<String, String> parameters) {
-    this.host = parameters.getOrDefault("host", "localhost");
-    this.port = parameters.getOrDefault("port", "9999");
-    this.msg = parameters.getOrDefault("message", "echo");
+    String host = parameters.getOrDefault("host", ServerApp.DEFAULT_HOST);
+    String port = parameters.getOrDefault("port", ServerApp.DEFAULT_PORT);
+    address = new InetSocketAddress(host, Integer.valueOf(port));
+    this.msg = parameters.getOrDefault("message", "hi there!");
   }
 
   @Override
   public void run() {
-    SocketAddress address = new InetSocketAddress(host, Integer.valueOf(port));
+
     AsynchronousSocket socket;
     try {
       socket = this.io.openSocket();
@@ -52,18 +56,20 @@ public class ClientApp extends Application {
       throw new RuntimeException(e);
     }
 
-    socket.connect(address).thenAccept((s) -> {
+    socket.connect(this.address).thenAccept((s) -> {
+      LOG.info("Connected to server {}", this.address);
       this.connected(s);
     });
   }
 
   private void connected(AsynchronousSocket socket) {
-    socket.write(msg).thenAccept((s) -> {
-      this.waitEcho(s);
+    LOG.info("Sending message '{}' to server", this.msg);
+    socket.write(this.msg).thenAccept((s) -> {
+      this.waitResponse(s);
     });
   }
 
-  private void waitEcho(AsynchronousSocket socket) {
+  private void waitResponse(AsynchronousSocket socket) {
     socket.read().thenAccept((msg) -> {
       System.out.printf("Server reply> %s\n", msg);
       this.shutdown();

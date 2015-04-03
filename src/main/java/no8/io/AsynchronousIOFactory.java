@@ -18,6 +18,7 @@ package no8.io;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -44,12 +45,19 @@ public class AsynchronousIOFactory {
   /**
    * Creates an {@link AsynchronousSocket}
    * 
-   * @param address
-   * 
    * @see AsynchronousSocketChannel#open()
    */
   public AsynchronousSocket openSocket() throws IOException {
     return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.loop);
+  }
+
+  /**
+   * Creates an {@link AsynchronousServerSocket}
+   * 
+   * @see AsynchronousServerSocketChannel#open()
+   */
+  public AsynchronousServerSocket openServerSocket() throws IOException {
+    return new AsynchronousServerSocket(AsynchronousServerSocketChannel.open(), this.loop);
   }
 
 }

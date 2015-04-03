@@ -16,8 +16,11 @@
  */
 package no8.io;
 
+import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -25,6 +28,8 @@ import no8.async.AsyncLoop;
 import no8.async.TransformedFuture;
 
 public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel> {
+
+  private static final int BUFFER_SIZE = 512;
 
   public AsynchronousSocket(AsynchronousSocketChannel socketChannel, AsyncLoop loop) {
     super(socketChannel, loop);
@@ -41,10 +46,53 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
   }
 
   public CompletableFuture<AsynchronousSocket> write(String msg) {
-    return null;
+    // TODO Add timeout
+    Future<Integer> result = this.channel.write(ByteBuffer.wrap(msg.getBytes()));
+    TransformedFuture<Integer, AsynchronousSocket> transformedFuture = TransformedFuture
+        .<Integer, AsynchronousSocket> from(result).to((writtenBytes) -> {
+          return this;
+        });
+    return this.loop.runWhenDone(transformedFuture);
   }
 
-  public CompletableFuture<String> read() {
-    return null;
+  public CompletableFuture<Optional<String>> read() {
+    ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+    Future<Integer> result = this.channel.read(buffer);
+    TransformedFuture<Integer, Optional<String>> transformedFuture = TransformedFuture
+        .<Integer, Optional<String>> from(result)
+        .to(
+        (readBytes) -> {
+          Optional<String> read = Optional.empty();
+          if (readBytes > 0) {
+            buffer.rewind();
+            byte[] bytes = new byte[readBytes];
+            buffer.get(bytes);
+            read = Optional.of(new String(bytes));
+          }
+          return read;
+        });
+    return this.loop.runWhenDone(transformedFuture);
+  }
+
+  /**
+   * @see AsynchronousSocketChannel#getRemoteAddress()
+   */
+  public SocketAddress remoteAddress() {
+    try {
+      return this.channel.getRemoteAddress();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * @see AsynchronousSocketChannel#getLocalAddress()
+   */
+  public SocketAddress localAddress() {
+    try {
+      return this.channel.getLocalAddress();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

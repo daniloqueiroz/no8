@@ -19,8 +19,15 @@ package no8.async;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -57,14 +64,33 @@ public class AsyncLoopTest {
     assertThat(completable, notNullValue());
   }
 
-  @Test(expected=IllegalStateException.class)
-  public void startingStartLoop() {
-    this.loop.start();
-    this.loop.start();
-  }
+  @Test
+  @SuppressWarnings("unchecked")
+  public void futureThrowsExceptionCompletableFutureHandles() throws InterruptedException, ExecutionException {
+    // Setup future mock
+    Future<String> mockFuture = mock(Future.class);
+    when(mockFuture.isDone()).thenReturn(true);
+    when(mockFuture.get()).thenThrow(new RuntimeException("Ops, i did it again!"));
 
-  @Test(expected = IllegalStateException.class)
-  public void shutdownNotRunninLoop() {
+    // prepare CompletableFuture to check if we manage to handle te exception
+    final AtomicBoolean complete = new AtomicBoolean(false);
+    CompletableFuture<String> future = this.loop.runWhenDone(mockFuture);
+    future.exceptionally((ex) -> {
+      // if we receive and exception, we are good!
+      complete.set(true);
+      synchronized (this) {
+        this.notify();
+      }
+      return ex.getMessage();
+      }).thenAccept(something -> fail("Future should be broken")); // we failed!
+
+    // Starts loop to process future and go to sleep a bit
+    this.loop.start();
+    synchronized (this) {
+      this.wait(50);
+    }
     this.loop.shutdown();
+
+    assertTrue(complete.get());
   }
 }

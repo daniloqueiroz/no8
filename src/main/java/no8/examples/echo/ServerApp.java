@@ -16,16 +16,24 @@
  */
 package no8.examples.echo;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Map;
 
 import no8.Application;
+import no8.io.AsynchronousServerSocket;
+import no8.io.AsynchronousSocket;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerApp extends Application {
 
-  @Override
-  public void configure(Map<String, String> parameters) {
+  private static final Logger LOG = LoggerFactory.getLogger(ClientApp.class);
 
-  }
+  public static final String DEFAULT_HOST = "127.0.0.1";
+  public static final String DEFAULT_PORT = "9999";
+  private InetSocketAddress address;
 
   @Override
   public String name() {
@@ -33,9 +41,40 @@ public class ServerApp extends Application {
   }
 
   @Override
-  public void run() {
-    // TODO Auto-generated method stub
+  public void configure(Map<String, String> parameters) {
+    String host = parameters.getOrDefault("host", ServerApp.DEFAULT_HOST);
+    String port = parameters.getOrDefault("port", ServerApp.DEFAULT_PORT);
+    address = new InetSocketAddress(host, Integer.valueOf(port));
+  }
 
+  @Override
+  public void run() {
+    AsynchronousServerSocket serverSocket;
+
+    try {
+      serverSocket = this.io.openServerSocket();
+      LOG.info("Listen at {}, waiting connections.", this.address);
+      serverSocket.listen(this.address, (socket) -> {
+        LOG.info("Connection received from {}", socket.remoteAddress());
+        this.handleSocket(socket);
+      });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void handleSocket(AsynchronousSocket socket) {
+    socket.read().thenAccept((message) -> {
+      if (message.isPresent()) {
+        LOG.info("Server received message: {}", message.get());
+        socket.write(message.get()).thenAccept((s) -> {
+          handleSocket(s);
+        });
+      } else {
+        LOG.info("EOS received, closing socket.");
+        socket.close();
+      }
+    });
   }
 
 }

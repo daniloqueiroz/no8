@@ -19,8 +19,10 @@ package no8.async;
 import static java.lang.String.format;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
 import java.util.concurrent.ForkJoinTask;
@@ -65,12 +67,13 @@ public class AsyncLoop {
     this.errorHandler = errorHandler;
   }
 
+  /**
+   * Shutdown the loop. If loop not running, not happens.
+   */
   public void shutdown() {
     if (this.started) {
       this.started = false;
       this.pool.shutdown();
-    } else {
-      throw new IllegalStateException("Loop not started");
     }
   }
 
@@ -78,30 +81,61 @@ public class AsyncLoop {
     return this.started;
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  /**
+   * Starts the loop- if loop is already running, nothing happens.
+   * 
+   * **Internals notes**:
+   * 
+   * Starting the loop means setting up a loop that will take care process Futures as soon as they
+   * get completed and starting the internal {@link ExecutorService}.
+   */
   public void start() {
     if (!this.started) {
       this.started = true;
-
       this.pool.execute(() -> {
-        while (started) {
-          try {
-            // TODO use optional / monad
-            FutureContainer container = this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
-            if (container != null) {
-              if (container.future.isDone()) {
-                container.completable.complete(container.future.get());
-              } else {
-                this.futuresQueue.put(container);
-              }
-            }
-          } catch (Exception e) {
-            LOG.error("Unexpected exception on future loop", e);
+        // Future loop
+          while (started) {
+            tryProcessFuture(this.pollFutures());
           }
+        });
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> Optional<FutureContainer<T>> pollFutures() {
+    Optional<FutureContainer<T>> future = Optional.empty();
+    try {
+      FutureContainer<T> container = (FutureContainer<T>) this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
+      future = (container != null) ? Optional.of(container) : Optional.empty();
+    } catch (InterruptedException e) {
+      LOG.warn("Someone has interrupted futuresQueue Pool", e);
+    }
+    return future;
+  }
+
+  /**
+   * If the given {@link FutureContainer} is done, it submits another task to process the result.
+   */
+  private <T> void tryProcessFuture(Optional<FutureContainer<T>> container) {
+    Optional<CompletableFuture<T>> completableOpt = container.map(c -> c.completable);
+    container.map(c -> c.future).ifPresent(future -> {
+      if (future.isDone()) {
+        dispatchFutureResult(future, completableOpt.get());
+      } else {
+        try {
+          this.futuresQueue.put(container.get());
+        } catch (InterruptedException e) {
+          LOG.error("Unable to re-enqueue unfinished Future", e);
         }
-      });
-    } else {
-      throw new IllegalStateException("Loop already started");
+      }
+    });
+  }
+
+  private <T> void dispatchFutureResult(Future<T> future, CompletableFuture<T> completable) {
+    try {
+      completable.complete(future.get());
+    } catch (Exception e) {
+      completable.completeExceptionally(e);
     }
   }
 
