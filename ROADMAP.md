@@ -1,7 +1,8 @@
 * application --help support
-* Docker file
-* echo client/server example
-* metrics integration
 * MDC logging support
-* yml configuration
+* metrics integration
 * Jersey integration
+* AsynchronousChannelGroup 
+* Timeout
+* Docker file
+* yml configuration
