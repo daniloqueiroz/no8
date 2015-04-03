@@ -48,11 +48,6 @@ public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
     return this.fileChannel.size();
   }
 
-  @Override
-  public void close() throws IOException {
-    this.fileChannel.close();
-  }
-
   public AsynchronousFileChannel toFileChannel() {
     return this.fileChannel;
   }
