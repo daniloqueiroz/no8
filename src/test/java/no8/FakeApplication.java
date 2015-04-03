@@ -51,6 +51,11 @@ public class FakeApplication extends Application {
   }
 
   @Override
+  public String helpMessage() {
+    return "I'm a FAKE!";
+  }
+
+  @Override
   public void run() {
     try {
       while (run) {

@@ -16,6 +16,8 @@
  */
 package no8.examples.echo;
 
+import static java.lang.String.format;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -38,6 +40,13 @@ public class ServerApp extends Application {
   @Override
   public String name() {
     return "Echo Server";
+  }
+
+  @Override
+  public String helpMessage() {
+    String message = format("Listen for connections and replies with same received message." + "\nParams: \n\t"
+        + "--host: server host (default '%s')\n\t" + "--port: server port(default '%s')", DEFAULT_HOST, DEFAULT_PORT);
+    return message;
   }
 
   @Override

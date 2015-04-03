@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Launcher {
 
+  private static final String HELP = "--help";
   private static final Logger LOG = LoggerFactory.getLogger(Launcher.class);
   protected Application application;
   private Map<String, String> extraParams;
@@ -73,6 +74,10 @@ public class Launcher {
     this.application.waitFor();
   }
 
+  public void applicationHelp() {
+    System.out.printf("No8 Application: %s\n\n%s", this.application.name(), this.application.helpMessage());
+  }
+
   public static void main(String[] args) {
     if (args.length < 1) {
       System.err.println("Wrong number of parameters.");
@@ -82,7 +87,7 @@ public class Launcher {
     String param = args[0];
 
     switch (param) {
-    case "--help":
+    case HELP:
     case "-h":
       showHelp();
       System.exit(0);
@@ -91,7 +96,12 @@ public class Launcher {
     default:
       Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
       try {
-        new Launcher(param, extraParams).launch();
+        Launcher launcher = new Launcher(param, extraParams);
+        if (extraParams.containsKey(HELP)) {
+          launcher.applicationHelp();
+        } else {
+          launcher.launch();
+        }
       } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
         LOG.error("Error launching application", e);
         System.err.printf("Unable to launch application '%s'.\n", param);
@@ -111,7 +121,11 @@ public class Launcher {
     Queue<String> key = new LinkedList<>();
     args.stream().forEach((arg) -> {
       if (arg.startsWith("--")) {
-        key.offer(arg.substring(2));
+        if (arg.equals(HELP)) {
+          config.put(arg, arg);
+        } else {
+          key.offer(arg.substring(2));
+        }
       } else {
         config.put(key.poll(), arg);
       }

@@ -115,6 +115,22 @@ public abstract class Application implements Runnable {
   public abstract String name();
 
   /**
+   * Message to be displayed when given '--help' as parameter for Application.
+   * 
+   * **Suggested format**:
+   * 
+   * <pre>
+   * Application description
+   * Params:
+   *  --param1: description param 1 (default: defaultValue)
+   *  --param2: description param 2 (default: defaultValue)
+   * </pre>
+   * 
+   * @see ServerApp#helpMessage()
+   */
+  public abstract String helpMessage();
+
+  /**
    * Setup this application.
    * 
    * @param parameters
