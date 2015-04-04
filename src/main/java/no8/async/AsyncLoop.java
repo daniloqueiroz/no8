@@ -68,81 +68,18 @@ public class AsyncLoop {
   }
 
   /**
-   * Shutdown the loop. If loop not running, not happens.
+   * Submit the given {@link Runnable} for execution.
    */
-  public void shutdown() {
-    if (this.started) {
-      this.started = false;
-      this.pool.shutdown();
-    }
-  }
-
-  public boolean isStarted() {
-    return this.started;
-  }
-
-  /**
-   * Starts the loop- if loop is already running, nothing happens.
-   * 
-   * **Internals notes**:
-   * 
-   * Starting the loop means setting up a loop that will take care process Futures as soon as they
-   * get completed and starting the internal {@link ExecutorService}.
-   */
-  public void start() {
-    if (!this.started) {
-      this.started = true;
-      this.pool.execute(() -> {
-        // Future loop
-          while (started) {
-            tryProcessFuture(this.pollFutures());
-          }
-        });
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> Optional<FutureContainer<T>> pollFutures() {
-    Optional<FutureContainer<T>> future = Optional.empty();
-    try {
-      FutureContainer<T> container = (FutureContainer<T>) this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
-      future = (container != null) ? Optional.of(container) : Optional.empty();
-    } catch (InterruptedException e) {
-      LOG.warn("Someone has interrupted futuresQueue Pool", e);
-    }
-    return future;
-  }
-
-  /**
-   * If the given {@link FutureContainer} is done, it submits another task to process the result.
-   */
-  private <T> void tryProcessFuture(Optional<FutureContainer<T>> container) {
-    Optional<CompletableFuture<T>> completableOpt = container.map(c -> c.completable);
-    container.map(c -> c.future).ifPresent(future -> {
-      if (future.isDone()) {
-        dispatchFutureResult(future, completableOpt.get());
-      } else {
-        try {
-          this.futuresQueue.put(container.get());
-        } catch (InterruptedException e) {
-          LOG.error("Unable to re-enqueue unfinished Future", e);
-        }
-      }
-    });
-  }
-
-  private <T> void dispatchFutureResult(Future<T> future, CompletableFuture<T> completable) {
-    try {
-      completable.complete(future.get());
-    } catch (Exception e) {
-      completable.completeExceptionally(e);
-    }
-  }
-
   public ForkJoinTask<?> submit(Runnable runnable) {
     return this.pool.submit(runnable);
   }
 
+  /**
+   * Enqueue a future to be executed when it's done.
+   * 
+   * It returns a {@link CompletableFuture} that can be used to apply functions/operations to be
+   * executed when the time arrives.
+   */
   public <T> CompletableFuture<T> runWhenDone(Future<T> future) {
     CompletableFuture<T> completable = new CompletableFuture<>();
     try {
@@ -155,6 +92,12 @@ public class AsyncLoop {
     return completable;
   }
 
+  /**
+   * Executes the given blocking code in an asynchronous fashion.
+   * 
+   * It returns a {@link CompletableFuture} that can be used to apply functions/operations to be
+   * executed when the time arrives.
+   */
   public <T> CompletableFuture<T> blocking(Supplier<T> synchronousFunction) {
     final CompletableFuture<T> future = new CompletableFuture<>();
     try {
@@ -181,6 +124,81 @@ public class AsyncLoop {
     }
 
     return future;
+  }
+
+  /**
+   * Shutdown the loop. If loop not running, not happens.
+   */
+  public void shutdown() {
+    if (this.started) {
+      this.started = false;
+      this.pool.shutdown();
+    }
+  }
+
+  public boolean isStarted() {
+    return this.started;
+  }
+
+  /**
+   * Starts the loop- if loop is already running, nothing happens.
+   * 
+   * **Internals notes**:
+   * 
+   * Starting the loop means setting up a loop that will take care process Futures as soon as they
+   * get completed and starting the internal {@link ExecutorService}.
+   */
+  public void start() {
+    if (!this.started) {
+      this.started = true;
+      this.submit(() -> {
+        // Future loop
+        while (started) {
+          tryProcessFuture(this.pollFutures());
+        }
+      });
+    }
+  }
+
+  /**
+   * If the given {@link FutureContainer} is done, it submits another task to process the result.
+   */
+  private <T> void tryProcessFuture(Optional<FutureContainer<T>> container) {
+    Optional<CompletableFuture<T>> completableOpt = container.map(c -> c.completable);
+    container.map(c -> c.future).ifPresent(future -> {
+      if (future.isDone()) {
+        dispatchFutureResult(future, completableOpt.get());
+      } else {
+        try {
+          this.futuresQueue.put(container.get());
+        } catch (InterruptedException e) {
+          LOG.error("Unable to re-enqueue unfinished Future", e);
+        }
+      }
+    });
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> Optional<FutureContainer<T>> pollFutures() {
+    Optional<FutureContainer<T>> future = Optional.empty();
+    try {
+      FutureContainer<T> container = (FutureContainer<T>) this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
+      future = (container != null) ? Optional.of(container) : Optional.empty();
+    } catch (InterruptedException e) {
+      LOG.warn("Someone has interrupted futuresQueue Pool", e);
+    }
+    return future;
+  }
+
+  private <T> void dispatchFutureResult(Future<T> future, CompletableFuture<T> completable) {
+    // Submit the dispatching to be executed separately, avoiding blocking future consumer
+    this.submit(() -> {
+      try {
+        completable.complete(future.get());
+      } catch (Exception e) {
+        completable.completeExceptionally(e);
+      }
+    });
   }
 
   private class FutureContainer<T> {
