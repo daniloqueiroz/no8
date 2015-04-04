@@ -76,4 +76,9 @@ public final class TransformedFuture<T, R> implements Future<R> {
   public R get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
     return this.transformation.apply(this.future.get(timeout, unit));
   }
+
+  @Override
+  public String toString() {
+    return this.future.toString();
+  }
 }

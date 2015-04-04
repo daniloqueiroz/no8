@@ -58,7 +58,6 @@ public class ClientApp extends Application {
 
   @Override
   public void run() {
-
     AsynchronousSocket socket;
     try {
       socket = this.io.openSocket();

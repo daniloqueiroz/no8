@@ -88,11 +88,8 @@ public class Launcher {
 
     switch (param) {
     case HELP:
-    case "-h":
       showHelp();
       System.exit(0);
-      ;
-      ;
     default:
       Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
       try {
