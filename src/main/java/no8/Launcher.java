@@ -66,11 +66,12 @@ public class Launcher {
    */
   public void launch() {
     LOG.info("Lauching application {}", application.name());
-    // TODO create application class
-    LOG.debug("Application lifecycle configure being executed now.");
     this.application.configure(this.extraParams);
     this.application.start();
-    LOG.info("Application {} is running.", application.name());
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      this.application.shutdown();
+    }));
+    LOG.info("Application {} is up and running.", application.name());
     this.application.waitFor();
   }
 
@@ -82,7 +83,7 @@ public class Launcher {
     if (args.length < 1) {
       System.err.println("Wrong number of parameters.");
       showHelp();
-      System.exit(1);
+      System.exit(2);
     }
     String param = args[0];
 
@@ -102,6 +103,15 @@ public class Launcher {
       } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
         LOG.error("Error launching application", e);
         System.err.printf("Unable to launch application '%s'.\n", param);
+        System.exit(1);
+      } catch (ApplicationException e) {
+        LOG.error("Application aborted!", e);
+        System.err.printf("%s\nQuitting application\n", e.getMessage());
+        System.exit(3);
+      } catch (Throwable e) {
+        LOG.error("Unexpected error", e);
+        System.err.printf("Unexpected application error: %s\n", e.getMessage());
+        System.exit(4);
       }
     }
   }

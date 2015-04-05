@@ -67,4 +67,19 @@ public class ApplicationTest {
     this.application.waitFor();
     verify(this.mockLoop, times(3)).isStarted();
   }
+
+  @Test(expected = ApplicationException.class)
+  public void abortStopsLoopAndCauseWaitForToThrowException() {
+    when(this.mockLoop.isStarted()).thenReturn(true);
+    new Thread(() -> {
+      try {
+        Thread.sleep(50);
+        this.application.abort("This is a test", new Exception());
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }).start();
+    this.application.waitFor();
+  }
 }

@@ -60,6 +60,8 @@ public abstract class Application implements Runnable {
 
   public final AsyncLoop loop;
   public final AsynchronousIOFactory io;
+  private String abortMessage = null;
+  private Throwable rootCause;
 
   public Application() {
     this(new AsyncLoop());
@@ -87,12 +89,18 @@ public abstract class Application implements Runnable {
     this.loop.shutdown();
   }
 
+  public void abort(String abortMessage, Throwable rootCause) {
+    // TODO review how this works
+    this.abortMessage = abortMessage;
+    this.rootCause = rootCause;
+  }
+
   /**
    * Waits the application ends.
    */
   public void waitFor() {
     if (this.loop.isStarted()) {
-      while (this.loop.isStarted()) {
+      while (this.loop.isStarted() && this.abortMessage == null) {
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -101,6 +109,10 @@ public abstract class Application implements Runnable {
       }
     } else {
       throw new IllegalStateException("Loop is not started.");
+    }
+
+    if (this.abortMessage != null) {
+      throw new ApplicationException(this.abortMessage, this.rootCause);
     }
   }
 

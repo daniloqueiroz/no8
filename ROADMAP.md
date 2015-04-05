@@ -1,8 +1,7 @@
-* application --help support
 * MDC logging support
 * metrics integration
+* Timeout
 * Jersey integration
 * AsynchronousChannelGroup 
-* Timeout
 * Docker file
 * yml configuration

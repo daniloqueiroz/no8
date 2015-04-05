@@ -67,5 +67,4 @@ public class FakeApplication extends Application {
       throw new RuntimeException(e);
     }
   }
-
 }

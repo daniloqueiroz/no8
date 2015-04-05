@@ -68,6 +68,9 @@ public class ClientApp extends Application {
     socket.connect(this.address).thenAccept((s) -> {
       LOG.info("Connected to server {}", this.address);
       this.connected(s);
+    }).exceptionally((e) -> {
+      this.abort("Unable to connect to server", e);
+      return null; // wtf Java?
     });
   }
 
