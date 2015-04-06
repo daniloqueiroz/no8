@@ -64,7 +64,7 @@ public class Launcher {
   /**
    * Launches the {@link Application}
    */
-  public void launch() {
+  public void launch() throws InterruptedException {
     LOG.info("Lauching application {}", application.name());
     this.application.configure(this.extraParams);
     this.application.start();

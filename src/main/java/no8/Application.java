@@ -19,6 +19,7 @@ package no8;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 
 import no8.async.AsyncLoop;
 import no8.examples.echo.ClientApp;
@@ -60,6 +61,7 @@ public abstract class Application implements Runnable {
 
   public final AsyncLoop loop;
   public final AsynchronousIOFactory io;
+  private Optional<CountDownLatch> lock = Optional.empty();
   private String abortMessage = null;
   private Throwable rootCause;
 
@@ -81,35 +83,41 @@ public abstract class Application implements Runnable {
    * Starts the application {@link AsyncLoop}
    */
   public void start() {
-    this.loop.start();
-    this.loop.submit(this);
+    if (!lock.isPresent()) {
+      this.lock = Optional.of(new CountDownLatch(1));
+      this.loop.start();
+      this.loop.submit(this);
+    }
   }
 
+  /**
+   * Quits the application gracefully
+   */
   public void shutdown() {
     this.loop.shutdown();
+    this.lock.ifPresent(l -> l.countDown());
   }
 
+  /**
+   * Causes the application to abort due an unrecoverable failure.
+   * 
+   * @param abortMessage The message to be shown at console.
+   * @param rootCause The root failure that causes the application to abort.
+   */
   public void abort(String abortMessage, Throwable rootCause) {
     // TODO review how this works
     this.abortMessage = abortMessage;
     this.rootCause = rootCause;
+    this.lock.ifPresent(l -> l.countDown());
   }
 
   /**
    * Waits the application ends.
    */
-  public void waitFor() {
-    if (this.loop.isStarted()) {
-      while (this.loop.isStarted() && this.abortMessage == null) {
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    } else {
-      throw new IllegalStateException("Loop is not started.");
-    }
+  public void waitFor() throws InterruptedException {
+    this.lock.orElseThrow(() -> {
+      return new IllegalStateException("Loop is not started.");
+    }).await();
 
     if (this.abortMessage != null) {
       throw new ApplicationException(this.abortMessage, this.rootCause);

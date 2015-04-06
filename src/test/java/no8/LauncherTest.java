@@ -57,7 +57,8 @@ public class LauncherTest {
   }
 
   @Test
-  public void launcherSetupsApplication() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+  public void launcherSetupsApplication() throws ClassNotFoundException, InstantiationException,
+      IllegalAccessException, InterruptedException {
     Application mockApp = mock(Application.class);
     Map<String, String> extraParams = new HashMap<>();
     extraParams.put("key", "value");

@@ -17,9 +17,7 @@
 package no8;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import no8.async.AsyncLoop;
 
 import org.junit.Before;
@@ -52,25 +50,18 @@ public class ApplicationTest {
   }
 
   @Test(expected = IllegalStateException.class)
-  public void waitForNotStartedLoopFails() {
+  public void waitForNotStartedLoopFails() throws InterruptedException {
     this.application.waitFor();
   }
 
   @Test(expected = IllegalStateException.class)
-  public void waitForNoLoopFails() {
+  public void waitForNoLoopFails() throws InterruptedException {
     this.application.waitFor();
-  }
-
-  @Test
-  public void waitFor2Interactions() {
-    when(this.mockLoop.isStarted()).thenReturn(true, true, false);
-    this.application.waitFor();
-    verify(this.mockLoop, times(3)).isStarted();
   }
 
   @Test(expected = ApplicationException.class)
-  public void abortStopsLoopAndCauseWaitForToThrowException() {
-    when(this.mockLoop.isStarted()).thenReturn(true);
+  public void abortStopsLoopAndCauseWaitForToThrowException() throws InterruptedException {
+    this.application.start();
     new Thread(() -> {
       try {
         Thread.sleep(50);
