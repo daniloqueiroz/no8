@@ -80,39 +80,41 @@ public class Launcher {
   }
 
   public static void main(String[] args) {
+    ExitCode code = ExitCode.SUCCESS;
     if (args.length < 1) {
       System.err.println("Wrong number of parameters.");
       showHelp();
-      System.exit(2);
-    }
-    String param = args[0];
+      code = ExitCode.WRONG_USAGE;
+    } else {
+      String param = args[0];
 
-    switch (param) {
-    case HELP:
-      showHelp();
-      System.exit(0);
-    default:
-      Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
-      try {
-        Launcher launcher = new Launcher(param, extraParams);
-        if (extraParams.containsKey(HELP)) {
-          launcher.applicationHelp();
-        } else {
-          launcher.launch();
+      switch (param) {
+      case HELP:
+        showHelp();
+      default:
+        Map<String, String> extraParams = argsToMap(Arrays.asList(args).subList(1, args.length));
+        try {
+          Launcher launcher = new Launcher(param, extraParams);
+          if (extraParams.containsKey(HELP)) {
+            launcher.applicationHelp();
+          } else {
+            launcher.launch();
+          }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          LOG.error("Error launching application", e);
+          System.err.printf("Unable to launch application '%s'.\n", param);
+          code = ExitCode.APPLICATION_INITIALIZATION_ERROR;
+        } catch (ApplicationException e) {
+          LOG.error("Application aborted!", e);
+          System.err.printf("%s\nQuitting application\n", e.getMessage());
+          code = ExitCode.APPLICATION_ABORTED;
+        } catch (Throwable e) {
+          LOG.error("Unexpected error", e);
+          System.err.printf("Unexpected application error: %s\n", e.getMessage());
+          code = ExitCode.UNEXPECTED_ERROR;
         }
-      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-        LOG.error("Error launching application", e);
-        System.err.printf("Unable to launch application '%s'.\n", param);
-        System.exit(1);
-      } catch (ApplicationException e) {
-        LOG.error("Application aborted!", e);
-        System.err.printf("%s\nQuitting application\n", e.getMessage());
-        System.exit(3);
-      } catch (Throwable e) {
-        LOG.error("Unexpected error", e);
-        System.err.printf("Unexpected application error: %s\n", e.getMessage());
-        System.exit(4);
       }
+      System.exit(code.ordinal());
     }
   }
 
@@ -140,4 +142,7 @@ public class Launcher {
     return config;
   }
 
+  public enum ExitCode {
+    SUCCESS, WRONG_USAGE, APPLICATION_INITIALIZATION_ERROR, APPLICATION_ABORTED, UNEXPECTED_ERROR;
+  }
 }
