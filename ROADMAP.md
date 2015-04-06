@@ -1,9 +1,9 @@
 * metrics integration
 * MDC logging support
+* Group socket
 * SSL support
 * Secure echo example
-* Jersey integration
 * Timeout
 * AsynchronousChannelGroup 
 * Docker file
-* yml configuration
+* Jersey integration
