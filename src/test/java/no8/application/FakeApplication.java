@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package no8;
+package no8.application;
 
 import static java.lang.Integer.parseInt;
 
 import java.util.Map;
 
+import no8.application.Application;
 import no8.async.AsyncLoop;
 
 public class FakeApplication extends Application {

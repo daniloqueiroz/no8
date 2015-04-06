@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
-import no8.Application;
+import no8.application.Application;
 import no8.io.AsynchronousServerSocket;
 import no8.io.AsynchronousSocket;
 

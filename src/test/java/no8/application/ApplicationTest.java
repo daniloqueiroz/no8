@@ -14,10 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package no8;
+package no8.application;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import no8.application.Application;
+import no8.application.ApplicationException;
 import no8.async.AsyncLoop;
 
 import org.junit.Before;
