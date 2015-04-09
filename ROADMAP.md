@@ -1,6 +1,7 @@
 * metrics integration
 * MDC logging support
-* Group socket
+* Group socket / Socket Context
+* Pipe socket
 * SSL support
 * Secure echo example
 * Timeout
