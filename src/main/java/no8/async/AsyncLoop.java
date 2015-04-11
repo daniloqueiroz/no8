@@ -17,6 +17,8 @@
 package no8.async;
 
 import static java.lang.String.format;
+import static no8.utils.MetricsHelper.histogram;
+import static no8.utils.MetricsHelper.timer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Optional;
@@ -35,6 +37,10 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.Timer.Context;
+
 public class AsyncLoop {
 
   private static final Logger LOG = LoggerFactory.getLogger(AsyncLoop.class);
@@ -46,7 +52,16 @@ public class AsyncLoop {
 
   private boolean started = false;
 
-  protected BlockingQueue<FutureContainer<?>> futuresQueue = new LinkedBlockingQueue<>();
+  protected BlockingQueue<FutureContext<?>> futuresQueue = new LinkedBlockingQueue<>();
+
+  private Histogram freeMem = histogram("JVM", "memory", "total");
+  private Histogram totalMem = histogram("JVM", "memory", "free");;
+  private Histogram queueSize = histogram(AsyncLoop.class, "future", "queue", "size");
+  private Histogram poolQueueSize = histogram(AsyncLoop.class, "pool", "queue", "size");
+  private Histogram poolActiveThreads = histogram(AsyncLoop.class, "pool", "threads", "size");
+  private Histogram activeThreads = histogram("JVM", "threads", "active");
+  private Timer blockingTime = timer(AsyncLoop.class, "time", "blocking");
+  private Timer nonblockingTime = timer(AsyncLoop.class, "time", "non-blocking");
 
   public AsyncLoop() {
     UncaughtExceptionHandler wrapper = ((t, e) -> {
@@ -83,7 +98,7 @@ public class AsyncLoop {
   public <T> CompletableFuture<T> runWhenDone(Future<T> future) {
     CompletableFuture<T> completable = new CompletableFuture<>();
     try {
-      this.futuresQueue.put(new FutureContainer<>(future, completable));
+      this.futuresQueue.put(new FutureContext<>(future, completable, this.nonblockingTime.time()));
     } catch (InterruptedException e) {
       LOG.error("Unexpected error adding future to AsyncLoop", e);
       throw new RuntimeException(e);
@@ -111,11 +126,13 @@ public class AsyncLoop {
 
         @Override
         public boolean block() throws InterruptedException {
-          if (!this.lock.get()) {
-            future.complete(synchronousFunction.get());
-            this.lock.set(true);
+          try (Timer.Context context = blockingTime.time()) {
+            if (!this.lock.get()) {
+              future.complete(synchronousFunction.get());
+              this.lock.set(true);
+            }
+            return this.lock.get();
           }
-          return this.lock.get();
         }
       });
     } catch (InterruptedException e) {
@@ -154,20 +171,30 @@ public class AsyncLoop {
       this.submit(() -> {
         // Future loop
         while (started) {
+          updateMetrics();
           tryProcessFuture(this.pollFutures());
         }
       });
     }
   }
 
+  private void updateMetrics() {
+    Runtime runtime = Runtime.getRuntime();
+    this.freeMem.update(runtime.freeMemory());
+    this.totalMem.update(runtime.totalMemory());
+    this.queueSize.update(this.futuresQueue.size());
+    this.activeThreads.update(Thread.activeCount());
+    this.poolActiveThreads.update(this.pool.getRunningThreadCount());
+    this.poolQueueSize.update(this.pool.getQueuedSubmissionCount());
+  }
+
   /**
-   * If the given {@link FutureContainer} is done, it submits another task to process the result.
+   * If the given {@link FutureContext} is done, it submits another task to process the result.
    */
-  private <T> void tryProcessFuture(Optional<FutureContainer<T>> container) {
-    Optional<CompletableFuture<T>> completableOpt = container.map(c -> c.completable);
+  private <T> void tryProcessFuture(Optional<FutureContext<T>> container) {
     container.map(c -> c.future).ifPresent(future -> {
       if (future.isDone()) {
-        dispatchFutureResult(future, completableOpt.get());
+        dispatchFutureResult(container.get());
       } else {
         try {
           this.futuresQueue.put(container.get());
@@ -179,10 +206,10 @@ public class AsyncLoop {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> Optional<FutureContainer<T>> pollFutures() {
-    Optional<FutureContainer<T>> future = Optional.empty();
+  private <T> Optional<FutureContext<T>> pollFutures() {
+    Optional<FutureContext<T>> future = Optional.empty();
     try {
-      FutureContainer<T> container = (FutureContainer<T>) this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
+      FutureContext<T> container = (FutureContext<T>) this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
       future = (container != null) ? Optional.of(container) : Optional.empty();
     } catch (InterruptedException e) {
       LOG.warn("Someone has interrupted futuresQueue Pool", e);
@@ -190,24 +217,31 @@ public class AsyncLoop {
     return future;
   }
 
-  private <T> void dispatchFutureResult(Future<T> future, CompletableFuture<T> completable) {
+  private <T> void dispatchFutureResult(FutureContext<T> container) {
     // Submit the dispatching to be executed separately, avoiding blocking future consumer
     this.submit(() -> {
       try {
-        completable.complete(future.get());
+        container.completable.complete(container.future.get());
       } catch (Exception e) {
-        completable.completeExceptionally(e);
+        container.completable.completeExceptionally(e);
+      } finally {
+        container.timeContext.close();
       }
     });
   }
 
-  private class FutureContainer<T> {
+  /**
+   * A simple wrapper class for futures
+   */
+  private class FutureContext<T> {
     Future<T> future;
     CompletableFuture<T> completable;
+    Context timeContext;
 
-    public FutureContainer(Future<T> future, CompletableFuture<T> completable) {
+    public FutureContext(Future<T> future, CompletableFuture<T> completable, Timer.Context timeContext) {
       this.future = future;
       this.completable = completable;
+      this.timeContext = timeContext;
     }
   }
 }

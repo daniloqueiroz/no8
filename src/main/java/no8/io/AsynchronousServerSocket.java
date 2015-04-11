@@ -16,6 +16,8 @@
  */
 package no8.io;
 
+import static no8.utils.MetricsHelper.meter;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.AsynchronousServerSocketChannel;
@@ -25,10 +27,15 @@ import java.util.function.Consumer;
 
 import no8.async.AsyncLoop;
 
+import com.codahale.metrics.Meter;
+
 public class AsynchronousServerSocket extends AsynchronousIO<AsynchronousServerSocketChannel> {
+
+  private Meter receivedConn;
 
   public AsynchronousServerSocket(AsynchronousServerSocketChannel channel, AsyncLoop loop) {
     super(channel, loop);
+    this.receivedConn = meter(AsynchronousSocket.class, "connections", "received");
   }
 
   /**
@@ -50,6 +57,7 @@ public class AsynchronousServerSocket extends AsynchronousIO<AsynchronousServerS
   private void acceptConnection(Consumer<AsynchronousSocket> connectionHandler) {
     Future<AsynchronousSocketChannel> future = this.channel.accept();
     this.loop.runWhenDone(future).thenAccept((socket) -> {
+      this.receivedConn.mark();
       connectionHandler.accept(new AsynchronousSocket(socket, this.loop));
       if (this.loop.isStarted()) {
         this.acceptConnection(connectionHandler);

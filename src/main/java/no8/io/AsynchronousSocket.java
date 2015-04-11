@@ -16,6 +16,8 @@
  */
 package no8.io;
 
+import static no8.utils.MetricsHelper.histogram;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -27,12 +29,19 @@ import java.util.concurrent.Future;
 import no8.async.AsyncLoop;
 import no8.async.TransformedFuture;
 
+import com.codahale.metrics.Histogram;
+
 public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel> {
 
   private static final int BUFFER_SIZE = 512;
+  private Histogram sentBytes;
+  private Histogram receivedBytes;
 
   public AsynchronousSocket(AsynchronousSocketChannel socketChannel, AsyncLoop loop) {
     super(socketChannel, loop);
+
+    this.receivedBytes = histogram(AsynchronousSocket.class, "bytes", "received");
+    this.sentBytes = histogram(AsynchronousSocket.class, "bytes", "sent");
   }
 
   public CompletableFuture<AsynchronousSocket> connect(SocketAddress address) {
@@ -50,6 +59,7 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
     Future<Integer> result = this.channel.write(ByteBuffer.wrap(msg.getBytes()));
     TransformedFuture<Integer, AsynchronousSocket> transformedFuture = TransformedFuture
         .<Integer, AsynchronousSocket> from(result).to((writtenBytes) -> {
+          this.sentBytes.update(writtenBytes);
           return this;
         });
     return this.loop.runWhenDone(transformedFuture);
@@ -59,9 +69,8 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
     ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
     Future<Integer> result = this.channel.read(buffer);
     TransformedFuture<Integer, Optional<String>> transformedFuture = TransformedFuture
-        .<Integer, Optional<String>> from(result)
-        .to(
-        (readBytes) -> {
+        .<Integer, Optional<String>> from(result).to((readBytes) -> {
+          this.receivedBytes.update(readBytes);
           Optional<String> read = Optional.empty();
           if (readBytes > 0) {
             buffer.rewind();
