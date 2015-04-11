@@ -141,8 +141,4 @@ public class Launcher {
     });
     return config;
   }
-
-  public enum ExitCode {
-    SUCCESS, WRONG_USAGE, APPLICATION_INITIALIZATION_ERROR, APPLICATION_ABORTED, UNEXPECTED_ERROR;
-  }
 }
