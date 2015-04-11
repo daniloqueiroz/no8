@@ -11,7 +11,7 @@ apply plugin:'application'
 
 description = 'No8'
 version = '0.1.0'
-mainClassName = 'no8.Launcher'
+mainClassName = 'no8.application.Launcher'
 applicationDefaultJvmArgs = ["-ea", "-showversion", "-server"]
 
 sourceCompatibility = JavaVersion.VERSION_1_8
