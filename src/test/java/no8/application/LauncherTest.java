@@ -27,9 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import no8.application.Application;
-import no8.application.Launcher;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +40,7 @@ public class LauncherTest {
   @Test
   public void createsLauncherWithClassName() throws ClassNotFoundException, InstantiationException,
       IllegalAccessException {
-    Launcher l = new Launcher("no8.FakeApplication", Collections.emptyMap());
+    Launcher l = new Launcher("no8.application.FakeApplication", Collections.emptyMap());
     assertThat(l.application, notNullValue());
   }
 
