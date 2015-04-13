@@ -23,6 +23,7 @@ import static no8.utils.MetricsHelper.timer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Instant;
+import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -52,6 +53,7 @@ public class AsyncLoop {
   private boolean started = false;
 
   protected BlockingQueue<FutureContext<?>> futuresQueue = new LinkedBlockingQueue<>();
+  protected TasksScheduler scheduler = new TasksScheduler();
 
   private Thread loopThread;
 
@@ -81,6 +83,10 @@ public class AsyncLoop {
    */
   public ForkJoinTask<?> submit(Runnable runnable) {
     return this.pool.submit(runnable);
+  }
+
+  public void schedule(long delay, TemporalUnit unit, Runnable function) {
+    this.scheduler.schedule(delay, unit, function);
   }
 
   /**
