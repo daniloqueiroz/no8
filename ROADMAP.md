@@ -1,10 +1,11 @@
 * metrics integration
-* MDC logging support
+* protocol support
+* Timeout
 * Group socket / Socket Context
+* MDC logging support
 * Pipe socket
 * SSL support
 * Secure echo example
-* Timeout
 * AsynchronousChannelGroup 
 * Docker file
 * Jersey integration
