@@ -27,10 +27,20 @@ import no8.async.AsyncLoop;
 
 public class AsynchronousIOFactory {
 
+  public static final int DEFAULT_BYTE_BUFFER_SIZE = 512;
+  private int bufferSize = DEFAULT_BYTE_BUFFER_SIZE;
   private AsyncLoop loop;
 
   public AsynchronousIOFactory(AsyncLoop loop) {
     this.loop = loop;
+  }
+
+  public void bufferSize(int byteBufferSize) {
+    this.bufferSize = (byteBufferSize > 0) ? byteBufferSize : DEFAULT_BYTE_BUFFER_SIZE;
+  }
+
+  public int bufferSize() {
+    return this.bufferSize;
   }
 
   /**
@@ -39,7 +49,7 @@ public class AsynchronousIOFactory {
    * @see AsynchronousFileChannel#open(Path, OpenOption...)
    */
   public AsynchronousFile openFile(Path file, OpenOption options) throws IOException {
-    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), this.loop);
+    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), this.loop, this.bufferSize);
   }
 
   /**
@@ -48,7 +58,7 @@ public class AsynchronousIOFactory {
    * @see AsynchronousSocketChannel#open()
    */
   public AsynchronousSocket openSocket() throws IOException {
-    return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.loop);
+    return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.loop, this.bufferSize);
   }
 
   /**
@@ -57,7 +67,7 @@ public class AsynchronousIOFactory {
    * @see AsynchronousServerSocketChannel#open()
    */
   public AsynchronousServerSocket openServerSocket() throws IOException {
-    return new AsynchronousServerSocket(AsynchronousServerSocketChannel.open(), this.loop);
+    return new AsynchronousServerSocket(AsynchronousServerSocketChannel.open(), this.loop, this.bufferSize);
   }
 
 }

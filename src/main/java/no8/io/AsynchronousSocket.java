@@ -34,15 +34,16 @@ import com.codahale.metrics.Histogram;
 public class AsynchronousSocket extends AsynchronousChannelWrapper<AsynchronousSocketChannel> implements
     AsynchronousIO<ByteBuffer> {
 
-  private static final int BUFFER_SIZE = 512;
+  private final int BUFFER_SIZE;
   private Histogram sentBytes;
   private Histogram receivedBytes;
 
-  public AsynchronousSocket(AsynchronousSocketChannel socketChannel, AsyncLoop loop) {
+  public AsynchronousSocket(AsynchronousSocketChannel socketChannel, AsyncLoop loop, int bufferSize) {
     super(socketChannel, loop);
 
     this.receivedBytes = histogram(AsynchronousSocket.class, "bytes", "received");
     this.sentBytes = histogram(AsynchronousSocket.class, "bytes", "sent");
+    this.BUFFER_SIZE = bufferSize;
   }
 
   public CompletableFuture<AsynchronousSocket> connect(SocketAddress address) {
@@ -70,7 +71,7 @@ public class AsynchronousSocket extends AsynchronousChannelWrapper<AsynchronousS
 
   @Override
   public CompletableFuture<Optional<ByteBuffer>> read() {
-    ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+    ByteBuffer buffer = ByteBuffer.allocateDirect(this.BUFFER_SIZE);
     Future<Integer> result = this.channel.read(buffer);
     TransformedFuture<Integer, Optional<ByteBuffer>> transformedFuture = TransformedFuture
         .<Integer, Optional<ByteBuffer>> from(result).to((readBytes) -> {

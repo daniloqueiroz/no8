@@ -19,26 +19,53 @@ package no8.io;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import no8.async.AsyncLoop;
+import no8.async.TransformedFuture;
 
 /**
  * A wrapper to {@link AsynchronousFileChannel} that executes all the operations inside the
  * {@link AsyncLoop}, providing a {@link CompletableFuture} to encapsulate the result.
  */
-public class AsynchronousFile extends AsynchronousChannelWrapper<AsynchronousFileChannel> {
+public class AsynchronousFile extends AsynchronousChannelWrapper<AsynchronousFileChannel> implements
+    AsynchronousIO<ByteBuffer> {
 
+  private final int BUFFER_SIZE;
   private AsyncLoop loop;
   private AsynchronousFileChannel fileChannel;
+  private int readPosition = 0;
+  private int writePosition = 0;
 
-  public AsynchronousFile(AsynchronousFileChannel fileChannel, AsyncLoop loop) {
+  public AsynchronousFile(AsynchronousFileChannel fileChannel, AsyncLoop loop, int bufferSize) {
     super(fileChannel, loop);
+    this.BUFFER_SIZE = bufferSize;
   }
 
-  public CompletableFuture<Integer> write(ByteBuffer buffer, Integer position) {
-    // TODO define a common interface with the AsynchronousSocket
-    return this.loop.runWhenDone(this.fileChannel.write(buffer, position));
+  @SuppressWarnings("unchecked")
+  @Override
+  public CompletableFuture<AsynchronousFile> write(ByteBuffer content) {
+    Future<Integer> result = this.fileChannel.write(content, this.writePosition);
+    TransformedFuture<Integer, AsynchronousFile> transformedFuture = TransformedFuture
+        .<Integer, AsynchronousFile> from(result).to((writtenBytes) -> {
+          this.writePosition += writtenBytes;
+          return this;
+        });
+    return this.loop.runWhenDone(transformedFuture);
+  }
+
+  @Override
+  public CompletableFuture<Optional<ByteBuffer>> read() {
+    ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+    Future<Integer> result = this.channel.read(buffer, this.readPosition);
+    TransformedFuture<Integer, Optional<ByteBuffer>> transformedFuture = TransformedFuture
+        .<Integer, Optional<ByteBuffer>> from(result).to((readBytes) -> {
+          this.readPosition += readBytes;
+          return (readBytes > 0) ? Optional.<ByteBuffer> of(buffer) : Optional.empty();
+        });
+    return this.loop.runWhenDone(transformedFuture);
   }
 
   public CompletableFuture<Integer> read(ByteBuffer buffer, Integer position) {

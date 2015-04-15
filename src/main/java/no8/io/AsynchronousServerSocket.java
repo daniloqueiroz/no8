@@ -32,10 +32,12 @@ import com.codahale.metrics.Meter;
 public class AsynchronousServerSocket extends AsynchronousChannelWrapper<AsynchronousServerSocketChannel> {
 
   private Meter receivedConn;
+  private final int BYTE_BUFFER_SIZE;
 
-  public AsynchronousServerSocket(AsynchronousServerSocketChannel channel, AsyncLoop loop) {
+  public AsynchronousServerSocket(AsynchronousServerSocketChannel channel, AsyncLoop loop, int bufferSize) {
     super(channel, loop);
     this.receivedConn = meter(AsynchronousSocket.class, "connections", "received");
+    this.BYTE_BUFFER_SIZE = bufferSize;
   }
 
   /**
@@ -58,7 +60,7 @@ public class AsynchronousServerSocket extends AsynchronousChannelWrapper<Asynchr
     Future<AsynchronousSocketChannel> future = this.channel.accept();
     this.loop.runWhenDone(future).thenAccept((socket) -> {
       this.receivedConn.mark();
-      connectionHandler.accept(new AsynchronousSocket(socket, this.loop));
+      connectionHandler.accept(new AsynchronousSocket(socket, this.loop, this.BYTE_BUFFER_SIZE));
       if (this.loop.isStarted()) {
         this.acceptConnection(connectionHandler);
       }
