@@ -29,7 +29,7 @@ import no8.async.AsyncLoop;
 
 import com.codahale.metrics.Meter;
 
-public class AsynchronousServerSocket extends AsynchronousIO<AsynchronousServerSocketChannel> {
+public class AsynchronousServerSocket extends AsynchronousChannelWrapper<AsynchronousServerSocketChannel> {
 
   private Meter receivedConn;
 
@@ -63,5 +63,6 @@ public class AsynchronousServerSocket extends AsynchronousIO<AsynchronousServerS
         this.acceptConnection(connectionHandler);
       }
     });
+    // TODO what happen to this future when the connection is closed
   }
 }

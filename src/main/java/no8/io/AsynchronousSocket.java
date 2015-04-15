@@ -31,7 +31,8 @@ import no8.async.TransformedFuture;
 
 import com.codahale.metrics.Histogram;
 
-public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel> {
+public class AsynchronousSocket extends AsynchronousChannelWrapper<AsynchronousSocketChannel> implements
+    AsynchronousIO<ByteBuffer> {
 
   private static final int BUFFER_SIZE = 512;
   private Histogram sentBytes;
@@ -54,9 +55,11 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
     return this.loop.runWhenDone(transformedFuture);
   }
 
-  public CompletableFuture<AsynchronousSocket> write(String msg) {
+  @SuppressWarnings("unchecked")
+  @Override
+  public CompletableFuture<AsynchronousSocket> write(ByteBuffer buffer) {
     // TODO Add timeout
-    Future<Integer> result = this.channel.write(ByteBuffer.wrap(msg.getBytes()));
+    Future<Integer> result = this.channel.write(buffer);
     TransformedFuture<Integer, AsynchronousSocket> transformedFuture = TransformedFuture
         .<Integer, AsynchronousSocket> from(result).to((writtenBytes) -> {
           this.sentBytes.update(writtenBytes);
@@ -65,20 +68,14 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
     return this.loop.runWhenDone(transformedFuture);
   }
 
-  public CompletableFuture<Optional<String>> read() {
+  @Override
+  public CompletableFuture<Optional<ByteBuffer>> read() {
     ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
     Future<Integer> result = this.channel.read(buffer);
-    TransformedFuture<Integer, Optional<String>> transformedFuture = TransformedFuture
-        .<Integer, Optional<String>> from(result).to((readBytes) -> {
+    TransformedFuture<Integer, Optional<ByteBuffer>> transformedFuture = TransformedFuture
+        .<Integer, Optional<ByteBuffer>> from(result).to((readBytes) -> {
           this.receivedBytes.update(readBytes);
-          Optional<String> read = Optional.empty();
-          if (readBytes > 0) {
-            buffer.rewind();
-            byte[] bytes = new byte[readBytes];
-            buffer.get(bytes);
-            read = Optional.of(new String(bytes));
-          }
-          return read;
+          return (readBytes > 0) ? Optional.<ByteBuffer> of(buffer) : Optional.empty();
         });
     return this.loop.runWhenDone(transformedFuture);
   }

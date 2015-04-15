@@ -16,48 +16,13 @@
  */
 package no8.io;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.channels.AsynchronousChannel;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import no8.async.AsyncLoop;
+public interface AsynchronousIO<T> {
+  
+  public <E extends AsynchronousIO<T>> CompletableFuture<E> write(T content);
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-/**
- * AsynchronousIO entities encapsulate the usage of java.nio.channels {@link AsynchronousChannel}.
- * 
- * {@link AsynchronousIO} objects returns a {@link CompletableFuture} and executes using the
- * {@link AsyncLoop#loop()}.
- */
-public class AsynchronousIO<T extends AsynchronousChannel> implements Closeable {
-
-  protected static final Logger LOG = LoggerFactory.getLogger(AsynchronousIO.class);
-
-  protected AsyncLoop loop;
-  protected T channel;
-
-  protected AsynchronousIO(T channel, AsyncLoop loop) {
-    this.channel = channel;
-    this.loop = loop;
-  }
-
-  @Override
-  public void close() {
-    try {
-      this.channel.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Gets the {@link AsynchronousChannel} wrapped by this {@link AsynchronousIO} object.
-   */
-  public T toAsynchronousChannel() {
-    return this.channel;
-  }
+  public CompletableFuture<Optional<T>> read();
 
 }

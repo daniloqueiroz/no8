@@ -27,7 +27,7 @@ import no8.async.AsyncLoop;
  * A wrapper to {@link AsynchronousFileChannel} that executes all the operations inside the
  * {@link AsyncLoop}, providing a {@link CompletableFuture} to encapsulate the result.
  */
-public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
+public class AsynchronousFile extends AsynchronousChannelWrapper<AsynchronousFileChannel> {
 
   private AsyncLoop loop;
   private AsynchronousFileChannel fileChannel;
@@ -37,6 +37,7 @@ public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
   }
 
   public CompletableFuture<Integer> write(ByteBuffer buffer, Integer position) {
+    // TODO define a common interface with the AsynchronousSocket
     return this.loop.runWhenDone(this.fileChannel.write(buffer, position));
   }
 

@@ -20,6 +20,7 @@ import static java.lang.String.format;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 import no8.application.Application;
@@ -75,7 +76,12 @@ public class ServerApp extends Application {
   private void handleSocket(AsynchronousSocket socket) {
     socket.read().thenAccept((message) -> {
       if (message.isPresent()) {
-        LOG.info("Server received message: {}", message.get());
+        ByteBuffer buffer = message.get();
+        byte[] bytes = new byte[buffer.position()];
+        buffer.flip();
+        buffer.get(bytes);
+        buffer.flip();
+        LOG.info("Server received message: {}", new String(bytes));
         socket.write(message.get()).thenAccept((s) -> {
           handleSocket(s);
         });
