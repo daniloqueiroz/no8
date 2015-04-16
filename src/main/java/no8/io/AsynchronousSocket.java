@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import no8.async.AsyncLoop;
-import no8.async.TransformedFuture;
+import no8.async.future.Futures;
 
 import com.codahale.metrics.Histogram;
 
@@ -48,8 +48,8 @@ public class AsynchronousSocket extends AsynchronousChannelWrapper<AsynchronousS
 
   public CompletableFuture<AsynchronousSocket> connect(SocketAddress address) {
     Future<Void> connection = this.channel.connect(address);
-    TransformedFuture<Void, AsynchronousSocket> transformedFuture = TransformedFuture.<Void, AsynchronousSocket> from(
-        connection).to((Void) -> {
+    Future<AsynchronousSocket> transformedFuture = Futures.<Void, AsynchronousSocket> transform(
+        connection).using((Void) -> {
       return this;
     });
 
@@ -61,8 +61,8 @@ public class AsynchronousSocket extends AsynchronousChannelWrapper<AsynchronousS
   public CompletableFuture<AsynchronousSocket> write(ByteBuffer buffer) {
     // TODO Add timeout
     Future<Integer> result = this.channel.write(buffer);
-    TransformedFuture<Integer, AsynchronousSocket> transformedFuture = TransformedFuture
-        .<Integer, AsynchronousSocket> from(result).to((writtenBytes) -> {
+    Future<AsynchronousSocket> transformedFuture = Futures.<Integer, AsynchronousSocket> transform(result).using(
+        (writtenBytes) -> {
           this.sentBytes.update(writtenBytes);
           return this;
         });
@@ -73,8 +73,8 @@ public class AsynchronousSocket extends AsynchronousChannelWrapper<AsynchronousS
   public CompletableFuture<Optional<ByteBuffer>> read() {
     ByteBuffer buffer = ByteBuffer.allocateDirect(this.BUFFER_SIZE);
     Future<Integer> result = this.channel.read(buffer);
-    TransformedFuture<Integer, Optional<ByteBuffer>> transformedFuture = TransformedFuture
-        .<Integer, Optional<ByteBuffer>> from(result).to((readBytes) -> {
+    Future<Optional<ByteBuffer>> transformedFuture = Futures.<Integer, Optional<ByteBuffer>> transform(result).using(
+        (readBytes) -> {
           this.receivedBytes.update(readBytes);
           return (readBytes > 0) ? Optional.<ByteBuffer> of(buffer) : Optional.empty();
         });

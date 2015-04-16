@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import no8.async.AsyncLoop;
-import no8.async.TransformedFuture;
+import no8.async.future.Futures;
 
 /**
  * A wrapper to {@link AsynchronousFileChannel} that executes all the operations inside the
@@ -48,8 +48,8 @@ public class AsynchronousFile extends AsynchronousChannelWrapper<AsynchronousFil
   @Override
   public CompletableFuture<AsynchronousFile> write(ByteBuffer content) {
     Future<Integer> result = this.fileChannel.write(content, this.writePosition);
-    TransformedFuture<Integer, AsynchronousFile> transformedFuture = TransformedFuture
-        .<Integer, AsynchronousFile> from(result).to((writtenBytes) -> {
+    Future<AsynchronousFile> transformedFuture = Futures.<Integer, AsynchronousFile> transform(result).using(
+        (writtenBytes) -> {
           this.writePosition += writtenBytes;
           return this;
         });
@@ -60,8 +60,8 @@ public class AsynchronousFile extends AsynchronousChannelWrapper<AsynchronousFil
   public CompletableFuture<Optional<ByteBuffer>> read() {
     ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
     Future<Integer> result = this.channel.read(buffer, this.readPosition);
-    TransformedFuture<Integer, Optional<ByteBuffer>> transformedFuture = TransformedFuture
-        .<Integer, Optional<ByteBuffer>> from(result).to((readBytes) -> {
+    Future<Optional<ByteBuffer>> transformedFuture = Futures.<Integer, Optional<ByteBuffer>> transform(result).using(
+        (readBytes) -> {
           this.readPosition += readBytes;
           return (readBytes > 0) ? Optional.<ByteBuffer> of(buffer) : Optional.empty();
         });
