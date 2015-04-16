@@ -20,10 +20,10 @@ import static java.lang.String.format;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import no8.application.Application;
+import no8.codec.StringCodec;
 import no8.io.AsynchronousServerSocket;
 import no8.io.AsynchronousSocket;
 
@@ -55,11 +55,12 @@ public class ServerApp extends Application {
     String host = parameters.getOrDefault("host", ServerApp.DEFAULT_HOST);
     String port = parameters.getOrDefault("port", ServerApp.DEFAULT_PORT);
     address = new InetSocketAddress(host, Integer.valueOf(port));
+    this.io.withCodec(new StringCodec());
   }
 
   @Override
   public void run() {
-    AsynchronousServerSocket serverSocket;
+    AsynchronousServerSocket<String> serverSocket;
 
     try {
       serverSocket = this.io.openServerSocket();
@@ -73,18 +74,12 @@ public class ServerApp extends Application {
     }
   }
 
-  private void handleSocket(AsynchronousSocket socket) {
+  private void handleSocket(AsynchronousSocket<String> socket) {
     socket.read().thenAccept((message) -> {
       if (message.isPresent()) {
-        ByteBuffer buffer = message.get();
-        byte[] bytes = new byte[buffer.position()];
-        buffer.flip();
-        buffer.get(bytes);
-        buffer.flip();
-        LOG.info("Server received message: {}", new String(bytes));
-        socket.write(message.get()).thenAccept((s) -> {
-          handleSocket(s);
-        });
+        String msg = message.get();
+        LOG.info("Server received message: {}", msg);
+        socket.write(msg);
       } else {
         LOG.info("EOS received, closing socket.");
         socket.close();

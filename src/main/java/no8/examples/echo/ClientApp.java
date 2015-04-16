@@ -20,10 +20,10 @@ import static java.lang.String.format;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import no8.application.Application;
+import no8.codec.StringCodec;
 import no8.io.AsynchronousSocket;
 
 import org.slf4j.Logger;
@@ -55,11 +55,12 @@ public class ClientApp extends Application {
     String port = parameters.getOrDefault("port", ServerApp.DEFAULT_PORT);
     address = new InetSocketAddress(host, Integer.valueOf(port));
     this.msg = parameters.getOrDefault("message", "hi there!");
+    this.io.withCodec(new StringCodec());
   }
 
   @Override
   public void run() {
-    AsynchronousSocket socket;
+    AsynchronousSocket<String> socket;
     try {
       socket = this.io.openSocket();
     } catch (IOException e) {
@@ -75,21 +76,17 @@ public class ClientApp extends Application {
     });
   }
 
-  private void connected(AsynchronousSocket socket) {
+  private void connected(AsynchronousSocket<String> socket) {
     LOG.info("Sending message '{}' to server", this.msg);
     // TODO codec wrap
-    socket.write(ByteBuffer.wrap(this.msg.getBytes())).thenAccept((s) -> {
-      this.waitResponse(s);
+    socket.write(this.msg).thenAccept((s) -> {
+      this.waitResponse((AsynchronousSocket<String>) s);
     });
   }
 
-  private void waitResponse(AsynchronousSocket socket) {
+  private void waitResponse(AsynchronousSocket<String> socket) {
     socket.read().thenAccept((message) -> {
-      ByteBuffer buffer = message.get();
-      byte[] bytes = new byte[buffer.position()];
-      buffer.rewind();
-      buffer.get(bytes);
-      System.out.printf("Server reply> %s\n", new String(bytes));
+      System.out.printf("Server reply> %s\n", message.get());
       this.shutdown();
     });
   }

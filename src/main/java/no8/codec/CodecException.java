@@ -14,12 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package no8.async.future;
+package no8.codec;
 
-import java.util.concurrent.Future;
-import java.util.function.Function;
+public class CodecException extends RuntimeException {
 
-public interface FutureTranformer<K extends Future<R>, T, R> {
+  private static final long serialVersionUID = 7655234493118638787L;
 
-  public Future<R> using(Function<T, R> transformation);
+  public CodecException(String message) {
+    super(message);
+  }
+
+  public CodecException(Throwable cause) {
+    super(cause);
+  }
+
+  public CodecException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public CodecException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
+  }
 }

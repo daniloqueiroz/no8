@@ -14,12 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package no8.async.future;
+package no8.codec;
 
-import java.util.concurrent.Future;
-import java.util.function.Function;
+import java.nio.ByteBuffer;
 
-public interface FutureTranformer<K extends Future<R>, T, R> {
 
-  public Future<R> using(Function<T, R> transformation);
+/**
+ * Base class for Codec.
+ * 
+ * @param <T> The external type Codec layer handles.
+ */
+public interface Codec<T> {
+
+  public ByteBuffer encode(T content);
+
+  public T decode(ByteBuffer content);
+
 }

@@ -20,24 +20,25 @@ import static no8.utils.MetricsHelper.meter;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import no8.async.AsyncLoop;
+import no8.codec.Codec;
 
 import com.codahale.metrics.Meter;
 
-public class AsynchronousServerSocket extends AsynchronousChannelWrapper<AsynchronousServerSocketChannel> {
+public class AsynchronousServerSocket<T> extends AsynchronousIO<AsynchronousServerSocketChannel, T> {
 
-  private Meter receivedConn;
-  private final int BYTE_BUFFER_SIZE;
+  private Meter receivedConn = meter(AsynchronousSocket.class, "connections", "received");
 
-  public AsynchronousServerSocket(AsynchronousServerSocketChannel channel, AsyncLoop loop, int bufferSize) {
-    super(channel, loop);
-    this.receivedConn = meter(AsynchronousSocket.class, "connections", "received");
-    this.BYTE_BUFFER_SIZE = bufferSize;
+  public AsynchronousServerSocket(AsynchronousServerSocketChannel channel, Codec<T> codec, AsyncLoop loop,
+      int bufferSize) {
+    super(channel, codec, loop, bufferSize);
   }
 
   /**
@@ -46,8 +47,8 @@ public class AsynchronousServerSocket extends AsynchronousChannelWrapper<Asynchr
    * @param localAddress The local address to bind and listen for connections.
    * @throws IOException
    */
-  public AsynchronousServerSocket listen(SocketAddress localAddress, Consumer<AsynchronousSocket> connectionHandler)
-      throws IOException {
+  public AsynchronousServerSocket<T> listen(SocketAddress localAddress,
+      Consumer<AsynchronousSocket<T>> connectionHandler) throws IOException {
     this.channel.bind(localAddress);
     this.acceptConnection(connectionHandler);
     return this;
@@ -56,15 +57,28 @@ public class AsynchronousServerSocket extends AsynchronousChannelWrapper<Asynchr
   /**
    * Keeps waiting for new connections and dispatching it to the given connection handler.
    */
-  private void acceptConnection(Consumer<AsynchronousSocket> connectionHandler) {
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private void acceptConnection(Consumer<AsynchronousSocket<T>> connectionHandler) {
     Future<AsynchronousSocketChannel> future = this.channel.accept();
     this.loop.runWhenDone(future).thenAccept((socket) -> {
       this.receivedConn.mark();
-      connectionHandler.accept(new AsynchronousSocket(socket, this.loop, this.BYTE_BUFFER_SIZE));
+      this.loop.submit(() -> {
+        connectionHandler.accept(new AsynchronousSocket(socket, this.codec, this.loop, this.bufferSize));
+      });
       if (this.loop.isStarted()) {
         this.acceptConnection(connectionHandler);
       }
     });
     // TODO what happen to this future when the connection is closed
+  }
+
+  @Override
+  protected Future<Integer> read(ByteBuffer buffer) {
+    throw new UnsupportedOperationException("Cannot read from a ServerSocket");
+  }
+
+  @Override
+  protected CompletableFuture<AsynchronousIO<AsynchronousServerSocketChannel, T>> write(ByteBuffer buffer) {
+    throw new UnsupportedOperationException("Cannot read from a ServerSocket");
   }
 }
