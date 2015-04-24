@@ -16,6 +16,9 @@
  */
 package no8.io;
 
+import static no8.utils.ByteUnit.KILOBYTE;
+import static no8.utils.ByteUnit.bytes;
+
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.AsynchronousServerSocketChannel;
@@ -29,7 +32,7 @@ import no8.codec.Codec;
 
 public class AsynchronousIOFactory {
 
-  public static final int DEFAULT_BYTE_BUFFER_SIZE = 512;
+  public static final int DEFAULT_BYTE_BUFFER_SIZE = (int) bytes(512, KILOBYTE);
   private int bufferSize = DEFAULT_BYTE_BUFFER_SIZE;
   private Codec<?> codec = new ByteBufferCodec();
   private AsyncLoop loop;
