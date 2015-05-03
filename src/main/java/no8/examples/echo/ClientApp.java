@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 
 import no8.application.Application;
+import no8.codec.StringCodec;
 import no8.io.AsynchronousSocket;
 
 import org.slf4j.Logger;
@@ -54,11 +55,12 @@ public class ClientApp extends Application {
     String port = parameters.getOrDefault("port", ServerApp.DEFAULT_PORT);
     address = new InetSocketAddress(host, Integer.valueOf(port));
     this.msg = parameters.getOrDefault("message", "hi there!");
+    this.io.withCodec(new StringCodec());
   }
 
   @Override
   public void run() {
-    AsynchronousSocket socket;
+    AsynchronousSocket<String> socket;
     try {
       socket = this.io.openSocket();
     } catch (IOException e) {
@@ -74,16 +76,17 @@ public class ClientApp extends Application {
     });
   }
 
-  private void connected(AsynchronousSocket socket) {
+  private void connected(AsynchronousSocket<String> socket) {
     LOG.info("Sending message '{}' to server", this.msg);
+    // TODO codec wrap
     socket.write(this.msg).thenAccept((s) -> {
-      this.waitResponse(s);
+      this.waitResponse((AsynchronousSocket<String>) s);
     });
   }
 
-  private void waitResponse(AsynchronousSocket socket) {
-    socket.read().thenAccept((msg) -> {
-      System.out.printf("Server reply> %s\n", msg);
+  private void waitResponse(AsynchronousSocket<String> socket) {
+    socket.read().thenAccept((message) -> {
+      System.out.printf("Server reply> %s\n", message.get());
       this.shutdown();
     });
   }

@@ -18,10 +18,15 @@ package no8.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannel;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import no8.async.AsyncLoop;
+import no8.async.future.Futures;
+import no8.codec.Codec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,16 +37,20 @@ import org.slf4j.LoggerFactory;
  * {@link AsynchronousIO} objects returns a {@link CompletableFuture} and executes using the
  * {@link AsyncLoop#loop()}.
  */
-public class AsynchronousIO<T extends AsynchronousChannel> implements Closeable {
+public abstract class AsynchronousIO<T extends AsynchronousChannel, E> implements Closeable {
 
   protected static final Logger LOG = LoggerFactory.getLogger(AsynchronousIO.class);
 
-  protected AsyncLoop loop;
-  protected T channel;
+  protected final int bufferSize;
+  protected final AsyncLoop loop;
+  protected final Codec<E> codec;
+  protected final T channel;
 
-  protected AsynchronousIO(T channel, AsyncLoop loop) {
+  protected AsynchronousIO(T channel, Codec<E> codec, AsyncLoop loop, int bufferSize) {
     this.channel = channel;
+    this.codec = codec;
     this.loop = loop;
+    this.bufferSize = bufferSize;
   }
 
   @Override
@@ -60,4 +69,21 @@ public class AsynchronousIO<T extends AsynchronousChannel> implements Closeable 
     return this.channel;
   }
 
+  public final CompletableFuture<AsynchronousIO<T, E>> write(E content) {
+    return this.write(this.codec.encode(content));
+  }
+
+  public final CompletableFuture<Optional<E>> read() {
+    ByteBuffer buffer = ByteBuffer.allocateDirect(this.bufferSize);
+    Future<Integer> result = this.read(buffer);
+    Future<Optional<E>> transformedFuture = Futures.<Integer, Optional<E>> transform(result).using((readBytes) -> {
+      buffer.rewind();
+      return (readBytes > 0) ? Optional.<E> of(this.codec.decode(buffer)) : Optional.empty();
+    });
+    return this.loop.runWhenDone(transformedFuture);
+  }
+
+  protected abstract Future<Integer> read(ByteBuffer buffer);
+
+  protected abstract CompletableFuture<AsynchronousIO<T, E>> write(ByteBuffer buffer);
 }

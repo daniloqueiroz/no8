@@ -16,6 +16,9 @@
  */
 package no8.io;
 
+import static no8.utils.ByteUnit.KILOBYTE;
+import static no8.utils.ByteUnit.bytes;
+
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.AsynchronousServerSocketChannel;
@@ -24,13 +27,31 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
 import no8.async.AsyncLoop;
+import no8.codec.ByteBufferCodec;
+import no8.codec.Codec;
 
 public class AsynchronousIOFactory {
 
+  public static final int DEFAULT_BYTE_BUFFER_SIZE = (int) bytes(512, KILOBYTE);
+  private int bufferSize = DEFAULT_BYTE_BUFFER_SIZE;
+  private Codec<?> codec = new ByteBufferCodec();
   private AsyncLoop loop;
 
   public AsynchronousIOFactory(AsyncLoop loop) {
     this.loop = loop;
+  }
+
+  public void bufferSize(int byteBufferSize) {
+    this.bufferSize = (byteBufferSize > 0) ? byteBufferSize : DEFAULT_BYTE_BUFFER_SIZE;
+  }
+
+  public int bufferSize() {
+    return this.bufferSize;
+  }
+
+  public <T> AsynchronousIOFactory withCodec(Codec<T> codec) {
+    this.codec = codec;
+    return this;
   }
 
   /**
@@ -38,8 +59,9 @@ public class AsynchronousIOFactory {
    * 
    * @see AsynchronousFileChannel#open(Path, OpenOption...)
    */
-  public AsynchronousFile openFile(Path file, OpenOption options) throws IOException {
-    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), this.loop);
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public <T> AsynchronousFile<T> openFile(Path file, OpenOption options) throws IOException {
+    return new AsynchronousFile(AsynchronousFileChannel.open(file, options), this.codec, this.loop, this.bufferSize);
   }
 
   /**
@@ -47,8 +69,9 @@ public class AsynchronousIOFactory {
    * 
    * @see AsynchronousSocketChannel#open()
    */
-  public AsynchronousSocket openSocket() throws IOException {
-    return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.loop);
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public <T> AsynchronousSocket<T> openSocket() throws IOException {
+    return new AsynchronousSocket(AsynchronousSocketChannel.open(), this.codec, this.loop, this.bufferSize);
   }
 
   /**
@@ -56,8 +79,9 @@ public class AsynchronousIOFactory {
    * 
    * @see AsynchronousServerSocketChannel#open()
    */
-  public AsynchronousServerSocket openServerSocket() throws IOException {
-    return new AsynchronousServerSocket(AsynchronousServerSocketChannel.open(), this.loop);
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public <T> AsynchronousServerSocket<T> openServerSocket() throws IOException {
+    return new AsynchronousServerSocket(AsynchronousServerSocketChannel.open(), this.codec, this.loop, this.bufferSize);
   }
 
 }

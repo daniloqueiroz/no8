@@ -20,28 +20,38 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import no8.async.AsyncLoop;
+import no8.async.future.Futures;
+import no8.codec.Codec;
 
 /**
  * A wrapper to {@link AsynchronousFileChannel} that executes all the operations inside the
  * {@link AsyncLoop}, providing a {@link CompletableFuture} to encapsulate the result.
+ * 
+ * @param <T>
  */
-public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
+public class AsynchronousFile<T> extends AsynchronousIO<AsynchronousFileChannel, T> {
 
   private AsyncLoop loop;
   private AsynchronousFileChannel fileChannel;
+  private int readPosition = 0;
+  private int writePosition = 0;
 
-  public AsynchronousFile(AsynchronousFileChannel fileChannel, AsyncLoop loop) {
-    super(fileChannel, loop);
+  public AsynchronousFile(AsynchronousFileChannel fileChannel, Codec<T> codec, AsyncLoop loop, int bufferSize) {
+    super(fileChannel, codec, loop, bufferSize);
   }
 
-  public CompletableFuture<Integer> write(ByteBuffer buffer, Integer position) {
-    return this.loop.runWhenDone(this.fileChannel.write(buffer, position));
-  }
-
-  public CompletableFuture<Integer> read(ByteBuffer buffer, Integer position) {
-    return this.loop.runWhenDone(this.fileChannel.read(buffer, position));
+  @Override
+  protected CompletableFuture<AsynchronousIO<AsynchronousFileChannel, T>> write(ByteBuffer content) {
+    Future<Integer> result = this.fileChannel.write(content, this.writePosition);
+    Future<AsynchronousIO<AsynchronousFileChannel, T>> transformedFuture = Futures
+        .<Integer, AsynchronousIO<AsynchronousFileChannel, T>> transform(result).using((writtenBytes) -> {
+          this.writePosition += writtenBytes;
+          return this;
+        });
+    return this.loop.runWhenDone(transformedFuture);
   }
 
   public long size() throws IOException {
@@ -50,5 +60,13 @@ public class AsynchronousFile extends AsynchronousIO<AsynchronousFileChannel> {
 
   public AsynchronousFileChannel toFileChannel() {
     return this.fileChannel;
+  }
+
+  @Override
+  protected Future<Integer> read(ByteBuffer buffer) {
+    return Futures.<Integer, Integer> transform(this.channel.read(buffer, this.readPosition)).using((read) -> {
+      this.readPosition += read;
+      return read;
+    });
   }
 }

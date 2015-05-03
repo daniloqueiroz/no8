@@ -22,65 +22,52 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import no8.async.AsyncLoop;
-import no8.async.TransformedFuture;
+import no8.async.future.Futures;
+import no8.codec.Codec;
 
 import com.codahale.metrics.Histogram;
 
-public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel> {
+public class AsynchronousSocket<T> extends AsynchronousIO<AsynchronousSocketChannel, T> {
 
-  private static final int BUFFER_SIZE = 512;
-  private Histogram sentBytes;
-  private Histogram receivedBytes;
+  private Histogram sentBytes = histogram(AsynchronousSocket.class, "bytes", "sent");;
+  private Histogram receivedBytes = histogram(AsynchronousSocket.class, "bytes", "received");
 
-  public AsynchronousSocket(AsynchronousSocketChannel socketChannel, AsyncLoop loop) {
-    super(socketChannel, loop);
-
-    this.receivedBytes = histogram(AsynchronousSocket.class, "bytes", "received");
-    this.sentBytes = histogram(AsynchronousSocket.class, "bytes", "sent");
+  public AsynchronousSocket(AsynchronousSocketChannel socketChannel, Codec<T> codec, AsyncLoop loop, int bufferSize) {
+    super(socketChannel, codec, loop, bufferSize);
   }
 
-  public CompletableFuture<AsynchronousSocket> connect(SocketAddress address) {
+  public CompletableFuture<AsynchronousSocket<T>> connect(SocketAddress address) {
     Future<Void> connection = this.channel.connect(address);
-    TransformedFuture<Void, AsynchronousSocket> transformedFuture = TransformedFuture.<Void, AsynchronousSocket> from(
-        connection).to((Void) -> {
+    Future<AsynchronousSocket<T>> transformedFuture = Futures.<Void, AsynchronousSocket<T>> transform(
+        connection).using((Void) -> {
       return this;
     });
 
     return this.loop.runWhenDone(transformedFuture);
   }
 
-  public CompletableFuture<AsynchronousSocket> write(String msg) {
-    // TODO Add timeout
-    Future<Integer> result = this.channel.write(ByteBuffer.wrap(msg.getBytes()));
-    TransformedFuture<Integer, AsynchronousSocket> transformedFuture = TransformedFuture
-        .<Integer, AsynchronousSocket> from(result).to((writtenBytes) -> {
+  @Override
+  protected CompletableFuture<AsynchronousIO<AsynchronousSocketChannel, T>> write(ByteBuffer buffer) {
+    Future<Integer> result = this.channel.write(buffer);
+    Future<AsynchronousIO<AsynchronousSocketChannel, T>> transformedFuture = Futures
+        .<Integer, AsynchronousIO<AsynchronousSocketChannel, T>> transform(result).using(
+        (writtenBytes) -> {
           this.sentBytes.update(writtenBytes);
           return this;
         });
     return this.loop.runWhenDone(transformedFuture);
   }
 
-  public CompletableFuture<Optional<String>> read() {
-    ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
-    Future<Integer> result = this.channel.read(buffer);
-    TransformedFuture<Integer, Optional<String>> transformedFuture = TransformedFuture
-        .<Integer, Optional<String>> from(result).to((readBytes) -> {
-          this.receivedBytes.update(readBytes);
-          Optional<String> read = Optional.empty();
-          if (readBytes > 0) {
-            buffer.rewind();
-            byte[] bytes = new byte[readBytes];
-            buffer.get(bytes);
-            read = Optional.of(new String(bytes));
-          }
-          return read;
-        });
-    return this.loop.runWhenDone(transformedFuture);
+  @Override
+  protected Future<Integer> read(ByteBuffer buffer) {
+    return Futures.<Integer, Integer> transform(this.channel.read(buffer)).using((read) -> {
+      this.receivedBytes.update(read);
+      return read;
+    });
   }
 
   /**
@@ -104,4 +91,6 @@ public class AsynchronousSocket extends AsynchronousIO<AsynchronousSocketChannel
       throw new RuntimeException(e);
     }
   }
+
+
 }
