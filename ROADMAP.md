@@ -1,11 +1,10 @@
-* metrics integration
+* finish metrics integration / task scheduler
+* Threads improvements
 * protocol support
 * Timeout
 * Group socket / Socket Context
-* MDC logging support
 * Pipe socket
 * SSL support
 * Secure echo example
 * AsynchronousChannelGroup 
-* Docker file
 * Jersey integration
