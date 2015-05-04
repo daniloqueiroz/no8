@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     compile (
-        'org.slf4j:slf4j-api:1.7.12',
+        'org.tinylog:tinylog:1.0',
         'io.dropwizard.metrics:metrics-core:3.1.2',
         'org.msgpack:msgpack:0.6.11',
     )
@@ -34,7 +34,7 @@ dependencies {
 )
 
     runtime (
-        'ch.qos.logback:logback-classic:1.1.3'
+
     )
 }
 

@@ -28,9 +28,6 @@ import no8.async.AsyncLoop;
 import no8.async.future.Futures;
 import no8.codec.Codec;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * AsynchronousIO entities encapsulate the usage of java.nio.channels {@link AsynchronousChannel}.
  * 
@@ -38,8 +35,6 @@ import org.slf4j.LoggerFactory;
  * {@link AsyncLoop#loop()}.
  */
 public abstract class AsynchronousIO<T extends AsynchronousChannel, E> implements Closeable {
-
-  protected static final Logger LOG = LoggerFactory.getLogger(AsynchronousIO.class);
 
   protected final int bufferSize;
   protected final AsyncLoop loop;

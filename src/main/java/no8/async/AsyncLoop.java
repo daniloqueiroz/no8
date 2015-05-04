@@ -16,7 +16,6 @@
  */
 package no8.async;
 
-import static java.lang.String.format;
 import static no8.utils.MetricsHelper.histogram;
 import static no8.utils.MetricsHelper.timer;
 
@@ -34,8 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pmw.tinylog.Logger;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Timer;
@@ -43,11 +41,10 @@ import com.codahale.metrics.Timer.Context;
 
 public class AsyncLoop {
 
-  private static final Logger LOG = LoggerFactory.getLogger(AsyncLoop.class);
 
   protected ForkJoinPool pool;
   private UncaughtExceptionHandler errorHandler = (tt, ee) -> {
-    LOG.error(format("Uncaught Exception from thread %s", tt), ee);
+    Logger.error(ee, "Uncaught Exception from thread {}", tt);
   };
 
   private boolean started = false;
@@ -100,7 +97,7 @@ public class AsyncLoop {
     try {
       this.futuresQueue.put(new FutureContext<>(future, completable, this.nonblockingTime.time()));
     } catch (InterruptedException e) {
-      LOG.error("Unexpected error adding future to AsyncLoop", e);
+      Logger.error(e, "Unexpected error adding future to AsyncLoop");
       throw new RuntimeException(e);
     }
 
@@ -136,7 +133,7 @@ public class AsyncLoop {
         }
       });
     } catch (InterruptedException e) {
-      LOG.error("Error while executing blocking task", e);
+      Logger.error(e, "Error while executing blocking task");
       throw new RuntimeException(e);
     }
 
@@ -199,7 +196,7 @@ public class AsyncLoop {
         try {
           this.futuresQueue.put(container.get());
         } catch (InterruptedException e) {
-          LOG.error("Unable to re-enqueue unfinished Future", e);
+          Logger.error(e, "Unable to re-enqueue unfinished Future");
         }
       }
     });
@@ -212,7 +209,7 @@ public class AsyncLoop {
       FutureContext<T> container = (FutureContext<T>) this.futuresQueue.poll(100, TimeUnit.MILLISECONDS);
       future = (container != null) ? Optional.of(container) : Optional.empty();
     } catch (InterruptedException e) {
-      LOG.warn("Someone has interrupted futuresQueue Pool", e);
+      Logger.warn(e, "Someone has interrupted futuresQueue Pool");
     }
     return future;
   }

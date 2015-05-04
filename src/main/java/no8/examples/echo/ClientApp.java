@@ -22,16 +22,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
+import org.pmw.tinylog.Logger;
+
 import no8.application.Application;
 import no8.codec.StringCodec;
 import no8.io.AsynchronousSocket;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ClientApp extends Application {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ClientApp.class);
 
   private String msg;
   private InetSocketAddress address;
@@ -68,7 +66,7 @@ public class ClientApp extends Application {
     }
 
     socket.connect(this.address).thenAccept((s) -> {
-      LOG.info("Connected to server {}", this.address);
+      Logger.info("Connected to server {}", this.address);
       this.connected(s);
     }).exceptionally((e) -> {
       this.abort("Unable to connect to server", e);
@@ -77,7 +75,7 @@ public class ClientApp extends Application {
   }
 
   private void connected(AsynchronousSocket<String> socket) {
-    LOG.info("Sending message '{}' to server", this.msg);
+    Logger.info("Sending message '{}' to server", this.msg);
     // TODO codec wrap
     socket.write(this.msg).thenAccept((s) -> {
       this.waitResponse((AsynchronousSocket<String>) s);

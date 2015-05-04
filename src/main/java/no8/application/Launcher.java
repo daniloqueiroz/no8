@@ -21,10 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import no8.async.AsyncLoop;
+import org.pmw.tinylog.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import no8.async.AsyncLoop;
 
 /**
  * Launcher for {@link Application}.
@@ -41,7 +40,6 @@ import org.slf4j.LoggerFactory;
 public class Launcher {
 
   private static final String HELP = "--help";
-  private static final Logger LOG = LoggerFactory.getLogger(Launcher.class);
   protected Application application;
   private Map<String, String> extraParams;
 
@@ -65,13 +63,13 @@ public class Launcher {
    * Launches the {@link Application}
    */
   public void launch() throws InterruptedException {
-    LOG.info("Lauching application {}", application.name());
+    Logger.info("Lauching application {}", application.name());
     this.application.configure(this.extraParams);
     this.application.start();
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       this.application.shutdown();
     }));
-    LOG.info("Application {} is up and running.", application.name());
+    Logger.info("Application {} is up and running.", application.name());
     this.application.waitFor();
   }
 
@@ -101,15 +99,15 @@ public class Launcher {
             launcher.launch();
           }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-          LOG.error("Error launching application", e);
+          Logger.error(e, "Error launching application");
           System.err.printf("Unable to launch application '%s'.\n", param);
           code = ExitCode.APPLICATION_INITIALIZATION_ERROR;
         } catch (ApplicationException e) {
-          LOG.error("Application aborted!", e);
+          Logger.error(e, "Application aborted!");
           System.err.printf("%s\nQuitting application\n", e.getMessage());
           code = ExitCode.APPLICATION_ABORTED;
         } catch (Throwable e) {
-          LOG.error("Unexpected error", e);
+          Logger.error(e, "Unexpected error");
           System.err.printf("Unexpected application error: %s\n", e.getMessage());
           code = ExitCode.UNEXPECTED_ERROR;
         }

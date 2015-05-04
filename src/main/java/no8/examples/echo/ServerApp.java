@@ -22,17 +22,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
+import org.pmw.tinylog.Logger;
+
 import no8.application.Application;
 import no8.codec.StringCodec;
 import no8.io.AsynchronousServerSocket;
 import no8.io.AsynchronousSocket;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ServerApp extends Application {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ClientApp.class);
 
   public static final String DEFAULT_HOST = "127.0.0.1";
   public static final String DEFAULT_PORT = "9999";
@@ -64,9 +62,9 @@ public class ServerApp extends Application {
 
     try {
       serverSocket = this.io.openServerSocket();
-      LOG.info("Listen at {}, waiting connections.", this.address);
+      Logger.info("Listen at {}, waiting connections.", this.address);
       serverSocket.listen(this.address, (socket) -> {
-        LOG.info("Connection received from {}", socket.remoteAddress());
+        Logger.info("Connection received from {}", socket.remoteAddress());
         this.handleSocket(socket);
       });
     } catch (IOException e) {
@@ -78,10 +76,10 @@ public class ServerApp extends Application {
     socket.read().thenAccept((message) -> {
       if (message.isPresent()) {
         String msg = message.get();
-        LOG.info("Server received message: {}", msg);
+        Logger.info("Server received message: {}", msg);
         socket.write(msg);
       } else {
-        LOG.info("EOS received, closing socket.");
+        Logger.info("EOS received, closing socket.");
         socket.close();
       }
     });
