@@ -184,10 +184,12 @@ public class AsyncLoop {
     if (!this.started) {
       this.started = true;
       this.submit(() -> {
+        Thread.currentThread().setName("Future Consumer Thread");
         // Future loop
         while (started) {
           updateMetrics();
           tryProcessFuture(this.pollFutures());
+          Thread.yield();
         }
       });
     }
