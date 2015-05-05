@@ -21,9 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import org.pmw.tinylog.Logger;
-
 import no8.async.AsyncLoop;
+import no8.io.ChannelGroupThreadFactory;
+
+import org.pmw.tinylog.Logger;
 
 /**
  * Launcher for {@link Application}.
@@ -63,6 +64,7 @@ public class Launcher {
    * Launches the {@link Application}
    */
   public void launch() throws InterruptedException {
+    ChannelGroupThreadFactory.setup();
     Logger.info("Lauching application {}", application.name());
     this.application.configure(this.extraParams);
     this.application.start();
