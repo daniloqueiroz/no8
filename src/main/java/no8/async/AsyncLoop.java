@@ -16,6 +16,8 @@
  */
 package no8.async;
 
+import static java.lang.Integer.max;
+import static java.lang.Integer.parseInt;
 import static no8.utils.MetricsHelper.histogram;
 import static no8.utils.MetricsHelper.timer;
 
@@ -41,6 +43,8 @@ import com.codahale.metrics.Timer.Context;
 
 public class AsyncLoop {
 
+  private static final String NUMBER_OF_THREADS = "numberOfThreads";
+  private static final int MIN_NUMBER_OF_THREADS = 2;
 
   protected ForkJoinPool pool;
   private UncaughtExceptionHandler errorHandler = (tt, ee) -> {
@@ -65,14 +69,28 @@ public class AsyncLoop {
       this.errorHandler.uncaughtException(t, e);
     });
 
-    this.pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
-        ForkJoinPool.defaultForkJoinWorkerThreadFactory, wrapper, true);
+    int threads = numberOfThreads();
+
+    this.pool = new ForkJoinPool(threads, ForkJoinPool.defaultForkJoinWorkerThreadFactory, wrapper, true);
+  }
+
+  /**
+   * Calculate the number of threads to be create ForkJoinPool.
+   */
+  private int numberOfThreads() {
+    int numProcessors = Runtime.getRuntime().availableProcessors();
+    int threads = parseInt(System.getProperty(NUMBER_OF_THREADS, "-1"));
+    threads = (threads > 0) ? threads : numProcessors;
+    threads = max(threads, MIN_NUMBER_OF_THREADS);
+    Logger.info("Number of Threads for AsyncLoopPool: {}", threads);
+    return threads;
   }
 
   /**
    * Set the handler for uncaught exceptions.
    * 
-   * @throws AssertionError if errorHandler is null.
+   * @throws AssertionError
+   *           if errorHandler is null.
    */
   public void exceptionHandler(UncaughtExceptionHandler errorHandler) {
     assert errorHandler != null;
