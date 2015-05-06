@@ -13,7 +13,7 @@ description = 'No8'
 version = '0.1.0'
 
 mainClassName = 'no8.application.Launcher'
-applicationDefaultJvmArgs = ["-ea", "-showversion", "-server"]
+applicationDefaultJvmArgs = ["-ea", "-showversion", "-server", "-Djava.nio.channels.DefaultThreadPool.initialSize=0"]
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
