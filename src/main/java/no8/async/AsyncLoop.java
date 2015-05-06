@@ -17,7 +17,6 @@
 package no8.async;
 
 import static java.lang.Integer.max;
-import static java.lang.Integer.parseInt;
 import static no8.utils.MetricsHelper.histogram;
 import static no8.utils.MetricsHelper.timer;
 
@@ -35,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import no8.application.Config;
+
 import org.pmw.tinylog.Logger;
 
 import com.codahale.metrics.Histogram;
@@ -43,7 +44,6 @@ import com.codahale.metrics.Timer.Context;
 
 public class AsyncLoop {
 
-  private static final String NUMBER_OF_THREADS = "numberOfThreads";
   private static final int MIN_NUMBER_OF_THREADS = 2;
 
   protected ForkJoinPool pool;
@@ -79,7 +79,7 @@ public class AsyncLoop {
    */
   private int numberOfThreads() {
     int numProcessors = Runtime.getRuntime().availableProcessors();
-    int threads = parseInt(System.getProperty(NUMBER_OF_THREADS, "-1"));
+    int threads = Config.getInt(Config.WORKER_THREADS);
     threads = (threads > 0) ? threads : numProcessors;
     threads = max(threads, MIN_NUMBER_OF_THREADS);
     Logger.info("Number of Threads for AsyncLoopPool: {}", threads);
