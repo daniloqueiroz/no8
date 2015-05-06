@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import no8.async.AsyncLoop;
-import no8.io.ChannelGroupThreadFactory;
+import no8.utils.MetricsHelper;
 
 import org.pmw.tinylog.Logger;
 
@@ -64,7 +64,6 @@ public class Launcher {
    * Launches the {@link Application}
    */
   public void launch() throws InterruptedException {
-    ChannelGroupThreadFactory.setup();
     Logger.info("Lauching application {}", application.name());
     this.application.configure(this.extraParams);
     this.application.start();
@@ -72,6 +71,10 @@ public class Launcher {
       this.application.shutdown();
     }));
     Logger.info("Application {} is up and running.", application.name());
+    if (Config.getBoolean(Config.JMX_REPORTER)) {
+      Logger.info("Setting JMX metrics reporter");
+      MetricsHelper.setupJMXReporter();
+    }
     this.application.waitFor();
   }
 
