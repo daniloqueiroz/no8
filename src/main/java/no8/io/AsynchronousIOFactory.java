@@ -26,23 +26,24 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
+import no8.application.Config;
 import no8.async.AsyncLoop;
 import no8.codec.ByteBufferCodec;
 import no8.codec.Codec;
 
 public class AsynchronousIOFactory {
 
-  public static final int DEFAULT_BYTE_BUFFER_SIZE = (int) bytes(512, KILOBYTE);
-  private int bufferSize = DEFAULT_BYTE_BUFFER_SIZE;
+  private int bufferSize;
   private Codec<?> codec = new ByteBufferCodec();
   private AsyncLoop loop;
 
   public AsynchronousIOFactory(AsyncLoop loop) {
     this.loop = loop;
+    this.bufferSize((int) bytes(Config.getInt(Config.BYTE_BUFFER_SIZE), KILOBYTE));
   }
 
   public void bufferSize(int byteBufferSize) {
-    this.bufferSize = (byteBufferSize > 0) ? byteBufferSize : DEFAULT_BYTE_BUFFER_SIZE;
+    this.bufferSize = byteBufferSize;
   }
 
   public int bufferSize() {

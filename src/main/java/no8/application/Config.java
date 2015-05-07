@@ -18,7 +18,9 @@ package no8.application;
 
 public enum Config {
 
-  JMX_REPORTER("jmxMetricReporter", "true"), WORKER_THREADS("workerThreads", "0");
+  JMX_REPORTER("jmxMetricReporter", "true"),
+  WORKER_THREADS("workerThreads", "0"),
+  BYTE_BUFFER_SIZE("bufferSizeKB", "512");
 
   private String name;
   private String defaultValue;
