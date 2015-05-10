@@ -66,6 +66,8 @@ public class Launcher {
   public void launch() throws InterruptedException {
     Logger.info("Lauching application {}", application.name());
     this.application.configure(this.extraParams);
+    Logger.info("Loading configuration");
+    Logger.info(Config.dumpConfig());
     this.application.start();
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       this.application.shutdown();

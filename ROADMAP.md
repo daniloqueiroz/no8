@@ -1,10 +1,10 @@
-* finish metrics integration / task scheduler
 * Threads improvements
+  * Separate IO/Future Threads
+* Config (using system properties)
+  * Logger buffer size
+  * default buffer size
+  * metrics
+  * Threads
+* FutureTimeout
 * protocol support
-* Timeout
-* Group socket / Socket Context
-* Pipe socket
-* SSL support
-* Secure echo example
 * AsynchronousChannelGroup 
-* Jersey integration
