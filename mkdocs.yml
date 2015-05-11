@@ -1,0 +1,7 @@
+site_name: No8 Documentation
+repo_url: https://github.com/danilqueiroz/no8/
+pages:
+  - [index.md, Home]
+  - [getting-started.md, Getting Started]
+  - [how-it-works.md, How it Works]
+theme: flatly
