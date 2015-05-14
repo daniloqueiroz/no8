@@ -56,6 +56,8 @@ public class AsyncLoop {
 
   protected BlockingQueue<FutureContext<?>> futuresQueue = new LinkedBlockingQueue<>();
 
+  private Thread loopThread;
+
   private final InternalMetrics metrics;
 
   public AsyncLoop() {
@@ -178,8 +180,7 @@ public class AsyncLoop {
   public void start() {
     if (!this.started) {
       this.started = true;
-      this.submit(() -> {
-        Thread.currentThread().setName("Future Consumer Thread");
+      this.loopThread = new Thread(() -> {
         // Future loop
           while (started) {
             this.metrics.update();
@@ -187,6 +188,9 @@ public class AsyncLoop {
             Thread.yield();
           }
         });
+      this.loopThread.setDaemon(true);
+      this.loopThread.setName("Future-Processor");
+      this.loopThread.start();
     }
   }
 
