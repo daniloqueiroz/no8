@@ -16,7 +16,8 @@
  */
 package no8.async;
 
-import static java.lang.Integer.max;
+import static no8.async.Threads.createForkJoinPool;
+import static no8.async.Threads.createThread;
 import static no8.utils.MetricsHelper.histogram;
 import static no8.utils.MetricsHelper.timer;
 
@@ -35,8 +36,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import no8.application.Config;
-
 import org.pmw.tinylog.Logger;
 
 import com.codahale.metrics.Histogram;
@@ -44,8 +43,6 @@ import com.codahale.metrics.Timer;
 import com.codahale.metrics.Timer.Context;
 
 public class AsyncLoop {
-
-  private static final int MIN_NUMBER_OF_THREADS = 2;
 
   protected ForkJoinPool pool;
   private UncaughtExceptionHandler errorHandler = (tt, ee) -> {
@@ -65,29 +62,14 @@ public class AsyncLoop {
       this.errorHandler.uncaughtException(t, e);
     });
 
-    int threads = numberOfThreads();
-
-    this.pool = new ForkJoinPool(threads, ForkJoinPool.defaultForkJoinWorkerThreadFactory, wrapper, true);
+    this.pool = createForkJoinPool(wrapper);
     this.metrics = new InternalMetrics();
-  }
-
-  /**
-   * Calculate the number of threads to be create ForkJoinPool.
-   */
-  private int numberOfThreads() {
-    int numProcessors = Runtime.getRuntime().availableProcessors();
-    int threads = Config.getInt(Config.WORKER_THREADS);
-    threads = (threads > 0) ? threads : numProcessors;
-    threads = max(threads, MIN_NUMBER_OF_THREADS);
-    Logger.info("Number of Threads for AsyncLoopPool: {}", threads);
-    return threads;
   }
 
   /**
    * Set the handler for uncaught exceptions.
    * 
-   * @throws AssertionError
-   *           if errorHandler is null.
+   * @throws AssertionError if errorHandler is null.
    */
   public void exceptionHandler(UncaughtExceptionHandler errorHandler) {
     assert errorHandler != null;
@@ -180,16 +162,13 @@ public class AsyncLoop {
   public void start() {
     if (!this.started) {
       this.started = true;
-      this.loopThread = new Thread(() -> {
-        // Future loop
-          while (started) {
-            this.metrics.update();
-            tryProcessFuture(this.pollFutures());
-            Thread.yield();
-          }
-        });
-      this.loopThread.setDaemon(true);
-      this.loopThread.setName("Future-Processor");
+      this.loopThread = createThread("Future-Loop", () -> {
+        while (started) {
+          this.metrics.update();
+          tryProcessFuture(this.pollFutures());
+          Thread.yield();
+        }
+      });
       this.loopThread.start();
     }
   }
