@@ -22,30 +22,34 @@ public enum Config {
   WORKER_THREADS("workerThreads", "0"),
   BYTE_BUFFER_SIZE("bufferSizeKB", "512");
 
-  final String name;
+  final String propertyName;
   final String defaultValue;
 
   private Config(String systemPropertyName, String defaultValue) {
-    this.name = systemPropertyName;
+    this.propertyName = systemPropertyName;
     this.defaultValue = defaultValue;
   }
 
+  public static void set(Config configuration, Object value) {
+    System.setProperty(configuration.propertyName, String.valueOf(value));
+  }
+
   public static String get(Config configuration) {
-    return System.getProperty(configuration.name, configuration.defaultValue);
+    return System.getProperty(configuration.propertyName, configuration.defaultValue);
   }
 
   public static Boolean getBoolean(Config configuration) {
-    return Boolean.parseBoolean(System.getProperty(configuration.name, configuration.defaultValue));
+    return Boolean.parseBoolean(System.getProperty(configuration.propertyName, configuration.defaultValue));
   }
 
   public static Integer getInt(Config configuration) {
-    return Integer.parseInt(System.getProperty(configuration.name, configuration.defaultValue));
+    return Integer.parseInt(System.getProperty(configuration.propertyName, configuration.defaultValue));
   }
 
   public static String dumpConfig() {
     StringBuilder buf = new StringBuilder();
     for (Config cfg : Config.values()) {
-      buf.append(cfg.name);
+      buf.append(cfg.propertyName);
       buf.append(": ");
       buf.append(Config.get(cfg));
       buf.append("; ");
