@@ -1,10 +1,4 @@
-* Threads improvements
-  * Separate IO/Future Threads
-* Config (using system properties)
-  * Logger buffer size
-  * default buffer size
-  * metrics
-  * Threads
+* Thread Scheduling
 * FutureTimeout
 * Basic tooling (commands support?)
 * UDP and Process support
