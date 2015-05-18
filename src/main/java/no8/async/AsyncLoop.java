@@ -16,10 +16,13 @@
  */
 package no8.async;
 
+import static no8.async.Threads.createForkJoinPool;
+import static no8.async.Threads.createThread;
 import static no8.utils.MetricsHelper.histogram;
 import static no8.utils.MetricsHelper.timer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +44,6 @@ import com.codahale.metrics.Timer.Context;
 
 public class AsyncLoop {
 
-
   protected ForkJoinPool pool;
   private UncaughtExceptionHandler errorHandler = (tt, ee) -> {
     Logger.error(ee, "Uncaught Exception from thread {}", tt);
@@ -51,22 +53,17 @@ public class AsyncLoop {
 
   protected BlockingQueue<FutureContext<?>> futuresQueue = new LinkedBlockingQueue<>();
 
-  private Histogram freeMem = histogram("JVM", "memory", "total");
-  private Histogram totalMem = histogram("JVM", "memory", "free");;
-  private Histogram queueSize = histogram(AsyncLoop.class, "future", "queue", "size");
-  private Histogram poolQueueSize = histogram(AsyncLoop.class, "pool", "queue", "size");
-  private Histogram poolActiveThreads = histogram(AsyncLoop.class, "pool", "threads", "size");
-  private Histogram activeThreads = histogram("JVM", "threads", "active");
-  private Timer blockingTime = timer(AsyncLoop.class, "time", "blocking");
-  private Timer nonblockingTime = timer(AsyncLoop.class, "time", "non-blocking");
+  private Thread loopThread;
+
+  private final InternalMetrics metrics;
 
   public AsyncLoop() {
     UncaughtExceptionHandler wrapper = ((t, e) -> {
       this.errorHandler.uncaughtException(t, e);
     });
 
-    this.pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
-        ForkJoinPool.defaultForkJoinWorkerThreadFactory, wrapper, true);
+    this.pool = createForkJoinPool(wrapper);
+    this.metrics = new InternalMetrics();
   }
 
   /**
@@ -95,7 +92,7 @@ public class AsyncLoop {
   public <T> CompletableFuture<T> runWhenDone(Future<T> future) {
     CompletableFuture<T> completable = new CompletableFuture<>();
     try {
-      this.futuresQueue.put(new FutureContext<>(future, completable, this.nonblockingTime.time()));
+      this.futuresQueue.put(new FutureContext<>(future, completable, this.metrics.nonblockingTime()));
     } catch (InterruptedException e) {
       Logger.error(e, "Unexpected error adding future to AsyncLoop");
       throw new RuntimeException(e);
@@ -123,7 +120,7 @@ public class AsyncLoop {
 
         @Override
         public boolean block() throws InterruptedException {
-          try (Timer.Context context = blockingTime.time()) {
+          try (Timer.Context context = metrics.blockingTime()) {
             if (!this.lock.get()) {
               future.complete(synchronousFunction.get());
               this.lock.set(true);
@@ -165,24 +162,15 @@ public class AsyncLoop {
   public void start() {
     if (!this.started) {
       this.started = true;
-      this.submit(() -> {
-        // Future loop
+      this.loopThread = createThread("Future-Loop", () -> {
         while (started) {
-          updateMetrics();
+          this.metrics.update();
           tryProcessFuture(this.pollFutures());
+          Thread.yield();
         }
       });
+      this.loopThread.start();
     }
-  }
-
-  private void updateMetrics() {
-    Runtime runtime = Runtime.getRuntime();
-    this.freeMem.update(runtime.freeMemory());
-    this.totalMem.update(runtime.totalMemory());
-    this.queueSize.update(this.futuresQueue.size());
-    this.activeThreads.update(Thread.activeCount());
-    this.poolActiveThreads.update(this.pool.getRunningThreadCount());
-    this.poolQueueSize.update(this.pool.getQueuedSubmissionCount());
   }
 
   /**
@@ -239,6 +227,42 @@ public class AsyncLoop {
       this.future = future;
       this.completable = completable;
       this.timeContext = timeContext;
+    }
+  }
+
+  /**
+   * Gather application metrics periodically
+   */
+  private class InternalMetrics {
+    private Histogram freeMem = histogram("JVM", "memory", "total");
+    private Histogram totalMem = histogram("JVM", "memory", "free");;
+    private Histogram queueSize = histogram(AsyncLoop.class, "future", "queue", "size");
+    private Histogram poolQueueSize = histogram(AsyncLoop.class, "pool", "queue", "size");
+    private Histogram poolActiveThreads = histogram(AsyncLoop.class, "pool", "threads", "size");
+    private Histogram activeThreads = histogram("JVM", "threads", "active");
+    private Timer blockingTime = timer(AsyncLoop.class, "time", "blocking");
+    private Timer nonblockingTime = timer(AsyncLoop.class, "time", "non-blocking");
+    private Instant lastUpdate = Instant.now();
+
+    Context nonblockingTime() {
+      return this.nonblockingTime.time();
+    }
+
+    Context blockingTime() {
+      return this.blockingTime.time();
+    }
+
+    void update() {
+      Instant now = Instant.now();
+      if (lastUpdate.plusMillis(500).isBefore(now)) {
+        Runtime runtime = Runtime.getRuntime();
+        this.freeMem.update(runtime.freeMemory());
+        this.totalMem.update(runtime.totalMemory());
+        this.queueSize.update(futuresQueue.size());
+        this.activeThreads.update(Thread.activeCount());
+        this.poolActiveThreads.update(pool.getRunningThreadCount());
+        this.poolQueueSize.update(pool.getQueuedSubmissionCount());
+      }
     }
   }
 }

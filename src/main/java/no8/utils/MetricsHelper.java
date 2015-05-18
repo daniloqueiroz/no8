@@ -19,6 +19,7 @@ package no8.utils;
 import static com.codahale.metrics.MetricRegistry.name;
 
 import com.codahale.metrics.Histogram;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -26,6 +27,11 @@ import com.codahale.metrics.Timer;
 public final class MetricsHelper {
 
   private static final MetricRegistry REGISTRY = new MetricRegistry();
+
+  public static void setupJMXReporter() {
+    JmxReporter reporter = JmxReporter.forRegistry(REGISTRY).build();
+    reporter.start();
+  }
 
   public static MetricRegistry registry() {
     return REGISTRY;

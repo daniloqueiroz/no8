@@ -21,9 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import org.pmw.tinylog.Logger;
-
 import no8.async.AsyncLoop;
+import no8.utils.MetricsHelper;
+
+import org.pmw.tinylog.Logger;
 
 /**
  * Launcher for {@link Application}.
@@ -65,11 +66,17 @@ public class Launcher {
   public void launch() throws InterruptedException {
     Logger.info("Lauching application {}", application.name());
     this.application.configure(this.extraParams);
+    Logger.info("Loading configuration");
+    Logger.info(Config.dumpConfig());
     this.application.start();
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       this.application.shutdown();
     }));
     Logger.info("Application {} is up and running.", application.name());
+    if (Config.getBoolean(Config.JMX_REPORTER)) {
+      Logger.info("Setting JMX metrics reporter");
+      MetricsHelper.setupJMXReporter();
+    }
     this.application.waitFor();
   }
 
