@@ -26,11 +26,11 @@ import java.time.Instant;
 import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -81,12 +81,29 @@ public class AsyncLoop {
   /**
    * Submit the given {@link Runnable} for execution.
    */
-  public ForkJoinTask<?> submit(Runnable runnable) {
-    return this.pool.submit(runnable);
+  public CompletableFuture<Void> submit(final Runnable runnable) {
+    return this.runWhenDone(this.pool.submit(() -> {
+      runnable.run();
+      return null;
+    }));
   }
 
-  public void schedule(long delay, TemporalUnit unit, Runnable function) {
-    this.scheduler.schedule(delay, unit, function);
+  /**
+   * Submit the given {@link Callable} for execution.
+   */
+  public <V> CompletableFuture<V> submit(Callable<V> runnable) {
+    return this.runWhenDone(this.pool.submit(runnable));
+  }
+
+  public <V> CompletableFuture<V> schedule(long delay, TemporalUnit unit, Callable<V> function) {
+    return this.runWhenDone(this.scheduler.schedule(delay, unit, function));
+  }
+
+  public CompletableFuture<Void> schedule(long delay, TemporalUnit unit, Runnable function) {
+    return this.runWhenDone(this.scheduler.schedule(delay, unit, () -> {
+      function.run();
+      return null;
+    }));
   }
 
   /**
