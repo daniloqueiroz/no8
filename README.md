@@ -7,7 +7,7 @@ The framework uses eventloop concept to handle all the async computations, encap
 
 No8 is under LGPL.
 
-[![Build Status](https://travis-ci.org/DaniloQueiroz/no8.svg)](https://travis-ci.org/DaniloQueiroz/no8)
+[![Build Status](https://travis-ci.org/daniloqueiroz/no8.svg?branch=master)](https://travis-ci.org/daniloqueiroz/no8)
 
 # Using No8
 
