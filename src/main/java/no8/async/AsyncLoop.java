@@ -53,7 +53,6 @@ public class AsyncLoop {
   private boolean started = false;
 
   protected BlockingQueue<FutureContext<?>> futuresQueue = new LinkedBlockingQueue<>();
-  protected TasksScheduler scheduler = new TasksScheduler();
 
   private Thread loopThread;
 
@@ -81,7 +80,7 @@ public class AsyncLoop {
   /**
    * Submit the given {@link Runnable} for execution.
    */
-  public CompletableFuture<Void> submit(final Runnable runnable) {
+  public CompletableFuture<Void> submit(Runnable runnable) {
     return this.runWhenDone(this.pool.submit(() -> {
       runnable.run();
       return null;
@@ -91,19 +90,30 @@ public class AsyncLoop {
   /**
    * Submit the given {@link Callable} for execution.
    */
-  public <V> CompletableFuture<V> submit(Callable<V> runnable) {
-    return this.runWhenDone(this.pool.submit(runnable));
+  public <V> CompletableFuture<V> submit(Callable<V> callable) {
+    return this.runWhenDone(this.pool.submit(callable));
   }
 
-  public <V> CompletableFuture<V> schedule(long delay, TemporalUnit unit, Callable<V> function) {
-    return this.runWhenDone(this.scheduler.schedule(delay, unit, function));
-  }
-
+  /**
+   * Schedule the given {@link Runnable} to execute after a given delay.
+   * 
+   * The only guarantee given is that it will be executes <b>after</b> the given delay.
+   */
   public CompletableFuture<Void> schedule(long delay, TemporalUnit unit, Runnable function) {
-    return this.runWhenDone(this.scheduler.schedule(delay, unit, () -> {
+    return this.runWhenDone(this.schedule(delay, unit, () -> {
       function.run();
       return null;
     }));
+  }
+
+  /**
+   * Schedule the given {@link Callable} to execute after a given delay.
+   * 
+   * The only guarantee given is that it will be executes <b>after</b> the given delay.
+   */
+  public <V> CompletableFuture<V> schedule(long delay, TemporalUnit unit, Callable<V> function) {
+    return null;
+    // return this.runWhenDone(this.scheduler.schedule(delay, unit, function));
   }
 
   /**
