@@ -1,8 +1,8 @@
 plugins {
   id 'com.bluepapa32.watch' version '0.1.5'
-  id 'com.github.ben-manes.versions' version '0.9'
+  id 'com.github.ben-manes.versions' version '0.11.3'
   id 'com.github.hierynomus.license' version '0.11.0'
-  id 'com.bmuschko.docker-java-application' version '2.3.1'
+  id 'com.bmuschko.docker-java-application' version '2.4'
 }
 
 apply plugin: 'java'
@@ -26,7 +26,7 @@ dependencies {
     compile (
         'org.tinylog:tinylog:1.0',
         'io.dropwizard.metrics:metrics-core:3.1.2',
-        'org.msgpack:msgpack:0.6.11',
+        'org.msgpack:msgpack:0.6.12',
     )
 
     testCompile (
@@ -49,7 +49,7 @@ task buildImage(type: DockerBuildImage) {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.3'
+    gradleVersion = '2.4'
 }
 
 watch {
