@@ -17,9 +17,7 @@
 package no8.async;
 
 import static java.lang.Math.max;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ForkJoinPool;
@@ -36,7 +34,7 @@ public class ThreadsTest {
     Thread thread = Threads.createThread("", () -> {
       ;
     });
-    assertTrue(thread.isDaemon());
+    assertThat(thread.isDaemon()).isTrue();
   }
 
   @Test
@@ -45,7 +43,7 @@ public class ThreadsTest {
     Thread thread = Threads.createThread(name, () -> {
       ;
     });
-    assertThat(thread.getName(), equalTo(name));
+    assertThat(thread.getName()).isEqualTo(name);
   }
 
   @Test
@@ -56,14 +54,14 @@ public class ThreadsTest {
     });
     thread.start();
     thread.join();
-    assertTrue(hasExecuted.get());
+    assertThat(hasExecuted.get()).isTrue();
   }
 
   @Test
   public void createForkJoinPool_rightNumberOfWorkers() {
     ForkJoinPool pool = Threads.createForkJoinPool(null);
     int expected = max(Runtime.getRuntime().availableProcessors(), Threads.POOL_MIN_NUMBER_OF_THREADS);
-    assertThat(pool.getParallelism(), equalTo(expected));
+    assertThat(pool.getParallelism()).isEqualTo(expected);
   }
 
   @Test
@@ -71,19 +69,19 @@ public class ThreadsTest {
     int expected = 10;
     Config.set(Config.WORKER_THREADS, expected);
     ForkJoinPool pool = Threads.createForkJoinPool(null);
-    assertThat(pool.getParallelism(), equalTo(10));
+    assertThat(pool.getParallelism()).isEqualTo(10);
   }
 
   @Test
   public void createForkJoinPool_asyncModeTrue() {
     ForkJoinPool pool = Threads.createForkJoinPool(null);
-    assertTrue(pool.getAsyncMode());
+    assertThat(pool.getAsyncMode()).isTrue();
   }
 
   @Test
   public void createForkJoinPool_withExceptionHandler() {
     UncaughtExceptionHandler exceptionHandler = ((t, e) -> {});
     ForkJoinPool pool = Threads.createForkJoinPool(exceptionHandler);
-    assertThat(pool.getUncaughtExceptionHandler(), equalTo(exceptionHandler));
+    assertThat(pool.getUncaughtExceptionHandler()).isEqualTo(exceptionHandler);
   }
 }

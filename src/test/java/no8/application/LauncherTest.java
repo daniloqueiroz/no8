@@ -14,9 +14,7 @@
  */
 package no8.application;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,13 +39,13 @@ public class LauncherTest {
   public void createsLauncherWithClassName() throws ClassNotFoundException, InstantiationException,
       IllegalAccessException {
     Launcher l = new Launcher("no8.application.FakeApplication", Collections.emptyMap());
-    assertThat(l.application, notNullValue());
+    assertThat(l.application).isNotNull();
   }
 
   @Test
   public void createsLauncherWithClass() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
     Launcher l = new Launcher(FakeApplication.class, Collections.emptyMap());
-    assertThat(l.application, notNullValue());
+    assertThat(l.application).isNotNull();
   }
 
   @Test(expected = InstantiationException.class)
@@ -79,7 +77,7 @@ public class LauncherTest {
 
     Map<String, String> config = Launcher.argsToMap(args);
 
-    assertEquals("value1", config.get("param1"));
-    assertEquals("value2", config.get("param2"));
+    assertThat(config.get("param1")).isEqualTo("value1");
+    assertThat(config.get("param2")).isEqualTo("value2");
   }
 }

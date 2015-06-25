@@ -5,6 +5,7 @@ plugins {
   id 'com.bmuschko.docker-java-application' version '2.4'
 }
 
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
@@ -31,6 +32,7 @@ dependencies {
 
     testCompile (
         'junit:junit:4.12',
+        'org.assertj:assertj-core:3.0.0',
         'org.mockito:mockito-all:2.0.2-beta',
 )
 

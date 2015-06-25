@@ -16,11 +16,8 @@
  */
 package no8.async;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -42,17 +39,17 @@ public class AsyncLoopTest {
   }
 
   @Test
-  public void runWhenDoneAddsFutureToQueue() {
-    assertThat(this.loop.futuresQueue.size(), equalTo(0));
+  public void runWhenDone_AddsFutureToQueue() {
+    assertThat(this.loop.futuresQueue.size()).isEqualTo(0);
     CompletableFuture<?> completable = this.loop.runWhenDone(new CompletableFuture<>());
-    assertThat(this.loop.futuresQueue.size(), equalTo(1));
-    assertThat(completable, notNullValue());
+    assertThat(this.loop.futuresQueue.size()).isEqualTo(1);
+    assertThat(completable).isNotNull();
 
   }
 
   @Test
-  public void blockingAddsFutureToQueue() {
-    assertThat(this.loop.futuresQueue.size(), equalTo(0));
+  public void blocking_AddsFutureToQueue() {
+    assertThat(this.loop.futuresQueue.size()).isEqualTo(0);
     CompletableFuture<Boolean> completable = this.loop.blocking(() -> {
       try {
         Thread.sleep(1000);
@@ -61,12 +58,12 @@ public class AsyncLoopTest {
       }
       return true;
     });
-    assertThat(completable, notNullValue());
+    assertThat(completable).isNotNull();
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  public void futureThrowsExceptionCompletableFutureHandles() throws InterruptedException, ExecutionException {
+  public void futureThrowsException_CompletableFutureHandles() throws InterruptedException, ExecutionException {
     // Setup future mock
     Future<String> mockFuture = mock(Future.class);
     when(mockFuture.isDone()).thenReturn(true);
@@ -91,6 +88,6 @@ public class AsyncLoopTest {
     }
     this.loop.shutdown();
 
-    assertTrue(complete.get());
+    assertThat(complete.get()).isTrue();
   }
 }

@@ -18,8 +18,6 @@ package no8.application;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import no8.application.Application;
-import no8.application.ApplicationException;
 import no8.async.AsyncLoop;
 
 import org.junit.Before;
@@ -69,7 +67,6 @@ public class ApplicationTest {
         Thread.sleep(50);
         this.application.abort("This is a test", new Exception());
       } catch (Exception e) {
-        // TODO Auto-generated catch block
         e.printStackTrace();
       }
     }).start();

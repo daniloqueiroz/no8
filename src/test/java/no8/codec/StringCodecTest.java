@@ -16,10 +16,10 @@
  */
 package no8.codec;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.nio.ByteBuffer;
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class StringCodecTest {
@@ -32,15 +32,14 @@ public class StringCodecTest {
   @Test
   public void encodeStringToByteBuffer() {
     ByteBuffer encoded = this.codec.encode(StringCodecTest.RAW_MESSAGE);
-    Assert.assertThat(encoded, CoreMatchers.equalTo(StringCodecTest.ENCODED_MESSAGE));
+    assertThat(encoded).isEqualTo(StringCodecTest.ENCODED_MESSAGE);
   }
 
   @Test
   public void decodeByteBufferToString() {
     String readMessage = this.codec.decode(StringCodecTest.ENCODED_MESSAGE);
-    Assert.assertThat(readMessage, CoreMatchers.equalTo(StringCodecTest.RAW_MESSAGE));
+    assertThat(readMessage).isEqualTo(StringCodecTest.RAW_MESSAGE);
   }
-
   @Test(expected = CodecException.class)
   public void decodeThrowsError() {
     this.codec.decode(null);
@@ -50,5 +49,4 @@ public class StringCodecTest {
   public void encodeThrowsError() {
     this.codec.encode(null);
   }
-
 }

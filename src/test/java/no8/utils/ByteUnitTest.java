@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package no8.utils;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
@@ -24,26 +24,26 @@ public class ByteUnitTest {
 
   @Test
   public void byteToByte() {
-    assertThat(ByteUnit.BYTE.to(ByteUnit.BYTE), equalTo(1L));
+    assertThat(ByteUnit.BYTE.to(ByteUnit.BYTE)).isEqualTo(1L);
   }
 
   @Test
   public void kilobyteToByte() {
-    assertThat(ByteUnit.KILOBYTE.to(ByteUnit.BYTE), equalTo(1024L));
+    assertThat(ByteUnit.KILOBYTE.to(ByteUnit.BYTE)).isEqualTo(1024L);
   }
 
   @Test
   public void megabyteToKilobyte() {
-    assertThat(ByteUnit.MEGABYTE.to(ByteUnit.KILOBYTE), equalTo(1024L));
+    assertThat(ByteUnit.MEGABYTE.to(ByteUnit.KILOBYTE)).isEqualTo(1024L);
   }
 
   @Test
   public void gigabyteToMegabyte() {
-    assertThat(ByteUnit.GIGABYTE.to(ByteUnit.MEGABYTE), equalTo(1024L));
+    assertThat(ByteUnit.GIGABYTE.to(ByteUnit.MEGABYTE)).isEqualTo(1024L);
   }
 
   @Test
   public void toBytes() {
-    assertThat(ByteUnit.bytes(0.5, ByteUnit.KILOBYTE), equalTo(512d));
+    assertThat(ByteUnit.bytes(0.5, ByteUnit.KILOBYTE)).isEqualTo(512d);
   }
 }

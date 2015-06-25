@@ -16,11 +16,10 @@
  */
 package no8.codec;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
-
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +42,7 @@ public class MsgPackCodecTest {
     ByteBuffer buf = this.codec.encode(this.msg);
     buf.rewind();
     Message decoded = this.codec.decode(buf);
-    assertThat(this.msg, equalTo(decoded));
+    assertThat(this.msg).isEqualTo(decoded);
   }
 
   @org.msgpack.annotation.Message

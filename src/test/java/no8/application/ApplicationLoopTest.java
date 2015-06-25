@@ -16,15 +16,9 @@
  */
 package no8.application;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collections;
-
-import no8.application.Application;
-import no8.application.Launcher;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +34,7 @@ public class ApplicationLoopTest {
   public void fakeApplicationRuns() throws InterruptedException, InstantiationException, IllegalAccessException {
     Launcher launch = new Launcher(FakeApplication.class, Collections.emptyMap());
 
-    assertThat(((FakeApplication) launch.application).loops(), is(0));
+    assertThat(((FakeApplication) launch.application).loops()).isEqualTo(0);
 
     // kills the test after a while
     new Thread(() -> {
@@ -49,11 +43,11 @@ public class ApplicationLoopTest {
       } catch (Exception e) {
         e.printStackTrace();
       }
-      assertTrue(launch.application.loop.isStarted());
+      assertThat(launch.application.loop.isStarted()).isTrue();
       launch.application.shutdown();
     }).start();
 
     launch.launch();
-    assertThat(((FakeApplication) launch.application).loops(), not(0));
+    assertThat(((FakeApplication) launch.application).loops()).isNotEqualTo(0);
   }
 }
