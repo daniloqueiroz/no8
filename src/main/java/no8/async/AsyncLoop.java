@@ -23,13 +23,14 @@ import static no8.utils.MetricsHelper.timer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Instant;
+import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ManagedBlocker;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -79,8 +80,40 @@ public class AsyncLoop {
   /**
    * Submit the given {@link Runnable} for execution.
    */
-  public ForkJoinTask<?> submit(Runnable runnable) {
-    return this.pool.submit(runnable);
+  public CompletableFuture<Void> submit(Runnable runnable) {
+    return this.runWhenDone(this.pool.submit(() -> {
+      runnable.run();
+      return null;
+    }));
+  }
+
+  /**
+   * Submit the given {@link Callable} for execution.
+   */
+  public <V> CompletableFuture<V> submit(Callable<V> callable) {
+    return this.runWhenDone(this.pool.submit(callable));
+  }
+
+  /**
+   * Schedule the given {@link Runnable} to execute after a given delay.
+   * 
+   * The only guarantee given is that it will be executes <b>after</b> the given delay.
+   */
+  public CompletableFuture<Void> schedule(long delay, TemporalUnit unit, Runnable function) {
+    return this.runWhenDone(this.schedule(delay, unit, () -> {
+      function.run();
+      return null;
+    }));
+  }
+
+  /**
+   * Schedule the given {@link Callable} to execute after a given delay.
+   * 
+   * The only guarantee given is that it will be executes <b>after</b> the given delay.
+   */
+  public <V> CompletableFuture<V> schedule(long delay, TemporalUnit unit, Callable<V> function) {
+    return null;
+    // return this.runWhenDone(this.scheduler.schedule(delay, unit, function));
   }
 
   /**
